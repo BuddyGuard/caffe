@@ -143,6 +143,25 @@ class AdamSolver : public SGDSolver<Dtype> {
   DISABLE_COPY_AND_ASSIGN(AdamSolver);
 };
 
+template <typename Dtype>
+class YoloSolver : public SGDSolver<Dtype> {
+ public:
+  explicit YoloSolver(const SolverParameter& param)
+      : SGDSolver<Dtype>(param) {}
+
+  explicit YoloSolver(const string& param_file)
+      : SGDSolver<Dtype>(param_file) {}
+
+  virtual inline const char* type() const { return "Yolo"; }
+
+ protected:
+  Dtype GetLearningRate();
+  virtual void ApplyUpdate();
+  virtual void ComputeUpdateValue(int param_id, Dtype rate);
+
+  DISABLE_COPY_AND_ASSIGN(YoloSolver);
+};
+
 }  // namespace caffe
 
 #endif  // CAFFE_SGD_SOLVERS_HPP_
