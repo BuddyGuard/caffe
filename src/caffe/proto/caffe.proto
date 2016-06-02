@@ -313,7 +313,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 146 (last added: parameter_param)
+// LayerParameter next available layer-specific ID: 147 (last added: yolo_detection_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -409,6 +409,7 @@ message LayerParameter {
   optional ThresholdParameter threshold_param = 128;
   optional TileParameter tile_param = 138;
   optional WindowDataParameter window_data_param = 129;
+  optional YoloDetectionParameter yolo_detection_param = 146;
 }
 
 // Message that stores parameters used to apply transformation
@@ -1383,4 +1384,20 @@ message PReLUParameter {
   optional FillerParameter filler = 1;
   // Whether or not slope paramters are shared across channels.
   optional bool channel_shared = 2 [default = false];
+}
+
+message YoloDetectionParameter{
+  // Yolo Detection layer parameters
+  
+  optional int32 classes = 1;
+  optional int32 coords = 2; 
+  optional bool rescore = 3;
+  optional int32 side = 4;
+  optional int32 num = 5;
+  optional bool sqrt = 6;
+  optional float no_object_scale = 7;
+  optional float object_scale = 8;
+  optional float class_scale = 9;
+  optional float coord_scale = 10;
+  
 }
