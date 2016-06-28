@@ -137,13 +137,11 @@ void YoloDetectionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 	Dtype* diff = diff_.mutable_cpu_data();
 
 	for(int b = 0; b < batch_size; ++b){
-		int index = b*bottom[0]->shape(1);
-
 		for(int i = 0; i < locations; ++i){
-			int truth_index = (b * locations + i) * (1 + coords_ + classes_);
+			int truth_index = bottom[1]->offset(b, 0, 0, i * (1 + coords_ + classes_));
 			int is_obj = truth[truth_index];
 			for(int j = 0; j < num_; ++j){
-				int p_index = index + locations * classes_ + i * num_ + j;
+				int p_index = bottom[0]->offset(b, locations * classes_ + i * num_ + j);
 				diff[p_index] = no_object_scale_ * (-output[p_index]);
 				cost += no_object_scale_ * pow(output[p_index], 2);
 				avg_anyobj += output[p_index];
@@ -157,7 +155,7 @@ void YoloDetectionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 				continue;
 			}
 
-			int class_index = index + i * classes_;
+			int class_index = bottom[1]->offset(b, 0, 0, i * classes_);
 
 			for(int j = 0; j < classes_; ++j){
 				diff[class_index+j] = class_scale_ * (truth[truth_index+1+j] - output[class_index+j]);
@@ -173,7 +171,7 @@ void YoloDetectionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 			bbox_truth.y /= side_;
 
 			for(int j = 0; j < num_; ++j){
-				int box_index = index + locations*(classes_ + num_) + (i * num_ + j) * coords_;
+				int box_index = bottom[0]->offset(b, locations*(classes_ + num_) + (i * num_ + j) * coords_);
 				BoundingBox<Dtype> bbox_out = GetBoundingBox(output, box_index);
 				bbox_out.x /= side_;
 				bbox_out.y /= side_;
@@ -199,7 +197,7 @@ void YoloDetectionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 				}
 			}
 
-			int box_index = index + locations*(classes_ + num_) + (i * num_ + best_index) * coords_;
+			int box_index = bottom[0]->offset(b, locations*(classes_ + num_) + (i * num_ + best_index) * coords_);
 			int tbox_index = truth_index + 1 + classes_;
 
 			BoundingBox<Dtype> bbox_out = this->GetBoundingBox(output, box_index);
@@ -213,7 +211,7 @@ void YoloDetectionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 
 			Dtype iou = this->BoxIOU(bbox_out, bbox_truth);
 
-			int p_index = index + locations * classes_ + i * num_ + best_index;
+			int p_index = bottom[0]->offset(b, locations * classes_ + i * num_ + best_index);
 			cost -= no_object_scale_ * pow(output[p_index], 2);
 			cost += object_scale_ * pow(1-output[p_index], 2);
 			avg_obj += output[p_index];
@@ -246,7 +244,7 @@ void YoloDetectionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 			avg_allcat/(count*classes_) << ", Pos Obj: " << avg_obj/count << ", Any Obj: " <<
 			avg_anyobj/(batch_size*locations*num_) << ", Object count: " << count;
 
-	if(avg_loss_ < 0){
+	if(avg_loss_ == 0){
 		avg_loss_ = cost/count;
 	}
 
