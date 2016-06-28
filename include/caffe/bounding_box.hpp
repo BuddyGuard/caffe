@@ -12,10 +12,15 @@ class BoundingBox {
 public:
 	BoundingBox(){}
 
+	int id;
 	Dtype x;
 	Dtype y;
 	Dtype w;
 	Dtype h;
+	Dtype left;
+	Dtype right;
+	Dtype top;
+	Dtype bottom;
 
 };  // class BoundingBox
 
