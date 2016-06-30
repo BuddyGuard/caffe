@@ -156,12 +156,17 @@ class YoloSolver : public SGDSolver<Dtype> {
 
  protected:
   Dtype GetLearningRate();
+  void ResetMomentum();
   virtual void ApplyUpdate();
   virtual void ComputeUpdateValue(int param_id, Dtype rate);
+
+  bool reset_momentum_;
 
   DISABLE_COPY_AND_ASSIGN(YoloSolver);
 };
 
+
 }  // namespace caffe
 
 #endif  // CAFFE_SGD_SOLVERS_HPP_
+
