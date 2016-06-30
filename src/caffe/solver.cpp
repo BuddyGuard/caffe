@@ -199,8 +199,8 @@ void Solver<Dtype>::Step(int iters) {
   smoothed_loss_ = 0;
 
   while (iter_ < stop_iter) {
-    // zero-init the params
-    net_->ClearParamDiffs();
+    // zero-init the params except for Yolo
+    if(param_.type() != "Yolo")net_->ClearParamDiffs();
     if (param_.test_interval() && iter_ % param_.test_interval() == 0
         && (iter_ > 0 || param_.test_initialization())
         && Caffe::root_solver()) {

@@ -7,6 +7,14 @@
 namespace caffe{
 
 template<typename Dtype>
+void YoloSolver<Dtype>::ResetMomentum(){
+	//if(param_.momentum() == 0){
+	//	return;
+	//}
+
+}
+
+template<typename Dtype>
 Dtype YoloSolver<Dtype>::GetLearningRate()
 {
 	Dtype rate;
@@ -19,11 +27,14 @@ Dtype YoloSolver<Dtype>::GetLearningRate()
 		    LOG(INFO) << "MultiStep Status: Iteration " <<
 		    this->iter_ << ", step = " << this->current_step_;
 		}
-		for(int i=0; i<this->param_.stepvalue_size(); ++i){
+		for(int i=0; i < this->param_.stepvalue_size(); ++i){
 			if(this->param_.stepvalue(i) > this->iter_){
 				return rate;
 			}
 			rate *= this->param_.scalevalue(i);
+			//if(this->param_.stepvalue(i) > this->iter_ - 1){
+			//	this->ResetMomentum();
+			//}
 		}
 	}
 	else {
@@ -50,7 +61,7 @@ void YoloSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate){
 	Dtype momentum = this->param_.momentum();
 	Dtype decay = this->param_.weight_decay();
 	Dtype batch_size = this->param_.batch_size();
-	Dtype scale_diff = rate / batch_size;
+	Dtype scale_diff = Dtype(rate) / batch_size;
 	Dtype scale_weight_data = Dtype(-1) * decay * batch_size;
 
 	switch (Caffe::mode()) {
@@ -77,6 +88,10 @@ void YoloSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate){
 			caffe_cpu_axpby(net_params[param_id]->count(), scale_diff,
 	    	              	net_params[param_id]->cpu_diff(), Dtype(1),
 	    				    net_params[param_id]->mutable_cpu_data());
+
+			// weights_diff = momentum * weights_diff
+			caffe_scal(net_params[param_id]->count(), momentum,
+					   net_params[param_id]->mutable_cpu_diff());
 		}
 	    break;
 	  }
@@ -109,7 +124,7 @@ void YoloSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate){
 template<typename Dtype>
 void YoloSolver<Dtype>::ApplyUpdate(){
 	Dtype rate = GetLearningRate();
-	LOG(INFO) << "Current learning rate = " << rate ;
+	//LOG(INFO) << "Current learning rate = " << rate ;
 	if (this->param_.display() && this->iter_ % this->param_.display() == 0) {
 	    LOG(INFO) << "Iteration " << this->iter_ << ", lr = " << rate;
 	 }
