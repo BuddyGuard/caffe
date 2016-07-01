@@ -244,9 +244,11 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   CHECK(cv_img.depth() == CV_8U) << "Image data type must be unsigned byte";
 
   const Dtype scale = param_.scale();
+  const float trans = param_.trans();
   const bool do_mirror = param_.mirror() && Rand(2);
   const bool has_mean_file = param_.has_mean_file();
   const bool has_mean_values = mean_values_.size() > 0;
+  const bool has_trans_value = trans != 0;
 
   CHECK_GT(img_channels, 0);
   CHECK_GE(img_height, crop_size);
@@ -315,7 +317,10 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
           if (has_mean_values) {
             transformed_data[top_index] =
               (pixel - mean_values_[c]) * scale;
-          } else {
+          }else if(has_trans_value){
+        	  transformed_data[top_index] = pixel * scale + trans;
+          }
+          else{
             transformed_data[top_index] = pixel * scale;
           }
         }

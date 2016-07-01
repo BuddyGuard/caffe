@@ -434,6 +434,8 @@ message TransformationParameter {
   optional bool force_color = 6 [default = false];
   // Force the decoded image to have 1 color channels.
   optional bool force_gray = 7 [default = false];
+  // Translation parameter (adding it for Yolo)
+  optional float trans = 8;
 }
 
 // Message that stores parameters shared by loss layers
@@ -1419,5 +1421,4 @@ message YoloDataParameter{
   optional float jitter = 11;
   optional int32 classes = 12;
   optional int32 coords = 13;
-  optional TransformationParameter scale = 14;
 }
