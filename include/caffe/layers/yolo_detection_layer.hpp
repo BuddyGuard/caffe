@@ -65,8 +65,6 @@ protected:
 	float object_scale_;
 	float class_scale_;
 	float coord_scale_;
-
-	Dtype avg_loss_;
 };
 
 } // namespace caffe

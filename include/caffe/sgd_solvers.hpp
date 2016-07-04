@@ -147,20 +147,24 @@ template <typename Dtype>
 class YoloSolver : public SGDSolver<Dtype> {
  public:
   explicit YoloSolver(const SolverParameter& param)
-      : SGDSolver<Dtype>(param) {}
+      : SGDSolver<Dtype>(param) { PreSolve(); avg_loss_ = 0;}
 
   explicit YoloSolver(const string& param_file)
-      : SGDSolver<Dtype>(param_file) {}
+      : SGDSolver<Dtype>(param_file) { PreSolve(); avg_loss_ = 0; }
 
   virtual inline const char* type() const { return "Yolo"; }
 
  protected:
+  void UpdateParams();
+  void PreSolve();
   Dtype GetLearningRate();
   void ResetMomentum();
   virtual void ApplyUpdate();
-  virtual void ComputeUpdateValue(int param_id, Dtype rate);
+  virtual void ComputeUpdateValue(int param_id, Dtype rate, Dtype momentum, Dtype decay);
 
   bool reset_momentum_;
+  Dtype rate_, momentum_, decay_;
+  Dtype avg_loss_;
 
   DISABLE_COPY_AND_ASSIGN(YoloSolver);
 };

@@ -43,8 +43,6 @@ void YoloDetectionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 	object_scale_ = yolo_param.object_scale();
 	class_scale_ = yolo_param.class_scale();
 	coord_scale_ = yolo_param.coord_scale();
-	avg_loss_ = Dtype(0);
-
 }
 
 template <typename Dtype>
@@ -61,8 +59,7 @@ void YoloDetectionLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 
 	diff_.ReshapeLike(*bottom[0]);
 
-	Dtype* diff_reset = diff_.mutable_cpu_data();
-	caffe_set(diff_.count(), Dtype(0), diff_reset);
+	caffe_set(diff_.count(), Dtype(0), diff_.mutable_cpu_data());
 }
 
 template <typename Dtype>
@@ -89,8 +86,8 @@ Dtype YoloDetectionLayer<Dtype>::BoxOverlap(const Dtype x1, const Dtype w1, cons
 
 template <typename Dtype>
 Dtype YoloDetectionLayer<Dtype>::BoxIntersection(const BoundingBox<Dtype>& a, const BoundingBox<Dtype>& b){
-	Dtype w = this->BoxOverlap(a.x, a.w, b.x, b.w);
-	Dtype h = this->BoxOverlap(a.y, a.h, b.y, b.h);
+	Dtype w = BoxOverlap(a.x, a.w, b.x, b.w);
+	Dtype h = BoxOverlap(a.y, a.h, b.y, b.h);
 
 	if(w < 0 || h < 0){
 		return Dtype(0);
@@ -102,7 +99,7 @@ Dtype YoloDetectionLayer<Dtype>::BoxIntersection(const BoundingBox<Dtype>& a, co
 
 template <typename Dtype>
 Dtype YoloDetectionLayer<Dtype>::BoxUnion(const BoundingBox<Dtype>& a, const BoundingBox<Dtype>& b){
-	Dtype i = this->BoxIntersection(a, b);
+	Dtype i = BoxIntersection(a, b);
 	Dtype u = a.w * a.h + b.w * b.h - i;
 	return u;
 }
@@ -114,7 +111,7 @@ Dtype YoloDetectionLayer<Dtype>::BoxRMSE(const BoundingBox<Dtype>& a, const Boun
 
 template <typename Dtype>
 Dtype YoloDetectionLayer<Dtype>::BoxIOU(const BoundingBox<Dtype>& a, const BoundingBox<Dtype>& b){
-	return this->BoxIntersection(a, b) / this->BoxUnion(a, b);
+	return BoxIntersection(a, b) / BoxUnion(a, b);
 }
 
 template <typename Dtype>
@@ -155,7 +152,7 @@ void YoloDetectionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 				continue;
 			}
 
-			int class_index = bottom[1]->offset(b, 0, 0, i * classes_);
+			int class_index = bottom[0]->offset(b, i * classes_);
 
 			for(int j = 0; j < classes_; ++j){
 				diff[class_index+j] = class_scale_ * (truth[truth_index+1+j] - output[class_index+j]);
@@ -166,7 +163,7 @@ void YoloDetectionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 				avg_allcat += output[class_index+j];
 			}
 
-			BoundingBox<Dtype> bbox_truth = this->GetBoundingBox(truth, truth_index+1+classes_);
+			BoundingBox<Dtype> bbox_truth = GetBoundingBox(truth, truth_index+1+classes_);
 			bbox_truth.x /= side_;
 			bbox_truth.y /= side_;
 
@@ -181,8 +178,8 @@ void YoloDetectionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 					bbox_out.h =  bbox_out.h * bbox_out.h;
 				}
 
-				Dtype iou = this->BoxIOU(bbox_out, bbox_truth);
-				Dtype rmse = this->BoxRMSE(bbox_out, bbox_truth);
+				Dtype iou = BoxIOU(bbox_out, bbox_truth);
+				Dtype rmse = BoxRMSE(bbox_out, bbox_truth);
 
 				if(best_iou > 0 || iou > 0){
 					if(iou > best_iou){
@@ -200,7 +197,7 @@ void YoloDetectionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 			int box_index = bottom[0]->offset(b, locations*(classes_ + num_) + (i * num_ + best_index) * coords_);
 			int tbox_index = truth_index + 1 + classes_;
 
-			BoundingBox<Dtype> bbox_out = this->GetBoundingBox(output, box_index);
+			BoundingBox<Dtype> bbox_out = GetBoundingBox(output, box_index);
 			bbox_out.x /= side_;
 			bbox_out.y /= side_;
 
@@ -209,7 +206,7 @@ void YoloDetectionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 				bbox_out.h = bbox_out.h * bbox_out.h;
 			}
 
-			Dtype iou = this->BoxIOU(bbox_out, bbox_truth);
+			Dtype iou = BoxIOU(bbox_out, bbox_truth);
 
 			int p_index = bottom[0]->offset(b, locations * classes_ + i * num_ + best_index);
 			cost -= no_object_scale_ * pow(output[p_index], 2);
@@ -237,39 +234,29 @@ void YoloDetectionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 		}
 	}
 
-	top[0]->mutable_cpu_data()[0] = cost / count;
+	top[0]->mutable_cpu_data()[0] = Dtype(cost) / batch_size;
 
 
-	LOG(INFO) << "Detection Avg IOU: " << avg_iou/count << ", Pos Cat: " << avg_cat/count << ", All Cat: " <<
-			avg_allcat/(count*classes_) << ", Pos Obj: " << avg_obj/count << ", Any Obj: " <<
+	LOG(INFO) << "Detection Avg IOU: " << Dtype(avg_iou)/count << ", Pos Cat: " << Dtype(avg_cat)/count << ", All Cat: " <<
+			avg_allcat/(count*classes_) << ", Pos Obj: " << Dtype(avg_obj)/count << ", Any Obj: " <<
 			avg_anyobj/(batch_size*locations*num_) << ", Object count: " << count;
-
-	if(avg_loss_ == 0){
-		avg_loss_ = cost/count;
-	}
-
-	avg_loss_ = 0.9 * avg_loss_ + 0.1 *  cost/count;
-
-	LOG(INFO) << "Loss = " << cost/count << ", Avg Loss = "<< avg_loss_ ;
-
-	Dtype min = 0;
-	Dtype max = 0;
-	for(int k=0; k<diff_.count(); k++)
-	{
-		if(diff[k] < min) min = diff[k];
-		if(diff[k] > max) max = diff[k];
-	}
-
-	LOG(INFO) << "detection.delta.min = " << min;
-	LOG(INFO) << "detection.delta.max = " << max;
 }
 
 template <typename Dtype>
 void YoloDetectionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 		const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom){
 
-	//caffe_copy(bottom[0]->count(), diff_.cpu_data(), bottom[0]->mutable_cpu_diff());
 	caffe_cpu_axpby(bottom[0]->count(), Dtype(1), diff_.cpu_data(), Dtype(0), bottom[0]->mutable_cpu_diff());
+
+	Dtype min = 0;
+	Dtype max = 0;
+	for(int k=0; k<bottom[0]->count(); k++)
+	{
+		if(bottom[0]->cpu_diff()[k] < min) min = bottom[0]->cpu_diff()[k];
+		if(bottom[0]->cpu_diff()[k] > max) max = bottom[0]->cpu_diff()[k];
+	}
+	LOG(INFO) << "detection.delta.min = " << min;
+	LOG(INFO) << "detection.delta.max = " << max;
 
 }
 
