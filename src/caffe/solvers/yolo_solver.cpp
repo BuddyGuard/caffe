@@ -28,7 +28,6 @@ void YoloSolver<Dtype>::PreSolve(){
 		const vector<int>& shape = net_params[i]->shape();
 		this->history_.push_back(shared_ptr<Blob<Dtype> >(new Blob<Dtype>(shape)));
 	}
-
 }
 
 template<typename Dtype>
@@ -62,92 +61,53 @@ Dtype YoloSolver<Dtype>::GetLearningRate()
 
 #ifndef CPU_ONLY
 template <typename Dtype>
-void yolo_update_bias_gpu(int N, Dtype* gdiff, Dtype* hdata,
-		Dtype rate, int batch_size, Dtype momentum);
+void UpdateWeights_gpu(int N, const Dtype* gpu_data, Dtype* mutable_gpu_data, const Dtype* gpu_diff,
+		Dtype* mutable_gpu_diff, Dtype rate, int batch_size, Dtype momentum, Dtype decay);
 
 template <typename Dtype>
-void yolo_update_weights_gpu(int N, Dtype* gdiff, Dtype* hdata, Dtype* gdata,
-		Dtype rate, int batch_size, Dtype momentum, Dtype decay);
+void UpdateBias_gpu(int N, const Dtype* gpu_data, Dtype* mutable_gpu_data, const Dtype* gpu_diff,
+		Dtype* mutable_gpu_diff, Dtype rate, int batch_size, Dtype momentum);
 #endif
 
 template<typename Dtype>
 void YoloSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate, Dtype momentum, Dtype decay){
 
 	const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
-	Dtype batch_size = this->param_.batch_size();
-	Dtype scale_diff = Dtype(-rate) / batch_size;
-	Dtype scale_weight_data = Dtype(-1) * decay * batch_size;
+	int batch_size = this->param_.batch_size();
 
 	switch (Caffe::mode()) {
 	  case Caffe::CPU: {
 
 		if(net_params[param_id]->shape().size() == 1){
-
-			caffe_axpy(net_params[param_id]->count(), Dtype(1),
-					   net_params[param_id]->cpu_diff(),
-					   this->history_[param_id]->mutable_cpu_data());
-
-			caffe_copy(net_params[param_id]->count(),
-					   this->history_[param_id]->cpu_data(),
-					   net_params[param_id]->mutable_cpu_diff());
-
-			caffe_scal(net_params[param_id]->count(), scale_diff,
-					net_params[param_id]->mutable_cpu_diff());
-
-			// bias_data = 1 * bias_data + scale_diff * bias_updates
-   			//caffe_axpy(net_params[param_id]->count(), scale_diff,
-			//              	net_params[param_id]->cpu_diff(),
-			//				net_params[param_id]->mutable_cpu_data());
-
-		    // bias_update = bias_update + momentum * bias_diff
-   			caffe_scal(this->history_[param_id]->count(), momentum,
-   					this->history_[param_id]->mutable_cpu_data());
-
+			caffe_axpy(net_params[param_id]->count(), rate/batch_size,
+					net_params[param_id]->cpu_diff(), net_params[param_id]->mutable_cpu_data());
+			caffe_scal(net_params[param_id]->count(), momentum, net_params[param_id]->mutable_cpu_diff());
 		}
 		else{
 
-			caffe_axpy(net_params[param_id]->count(), Dtype(1),
-					net_params[param_id]->cpu_diff(),
-					this->history_[param_id]->mutable_cpu_data());
-
-			// weights_update = 1 * weights_update + scale_weight_data * weights_data
-			caffe_axpy(net_params[param_id]->count(), scale_weight_data,
-					this->history_[param_id]->cpu_data(),
-					this->history_[param_id]->mutable_cpu_data());
-
-			caffe_copy(net_params[param_id]->count(),
-					this->history_[param_id]->cpu_data(),
-					net_params[param_id]->mutable_cpu_diff());
-
-			caffe_scal(net_params[param_id]->count(), scale_diff,
-					net_params[param_id]->mutable_cpu_diff());
-
-			// weights_data = 1 * weights_data + scale_diff * weights_diff
-			//caffe_axpy(net_params[param_id]->count(), scale_diff,
-	    	//              	net_params[param_id]->cpu_data(),
-	    	//			    net_params[param_id]->mutable_cpu_data());
-
-			// weights_update = momentum * weights_update
-			caffe_scal(this->history_[param_id]->count(), momentum,
-					this->history_[param_id]->mutable_cpu_diff());
-
+			caffe_axpy(net_params[param_id]->count(), -decay*batch_size,
+					net_params[param_id]->cpu_data(), net_params[param_id]->mutable_cpu_diff());
+			caffe_axpy(net_params[param_id]->count(), rate/batch_size,
+					net_params[param_id]->cpu_diff(), net_params[param_id]->mutable_cpu_data());
+			caffe_scal(net_params[param_id]->count(), momentum, net_params[param_id]->mutable_gpu_diff());
 		}
 	    break;
 	  }
 	  case Caffe::GPU: {
 #ifndef CPU_ONLY
 		  if(net_params[param_id]->shape().size() == 1){
-			  yolo_update_bias_gpu(net_params[param_id]->count(),
-					  	  	  	  net_params[param_id]->mutable_gpu_diff(),
-								  this->history_[param_id]->mutable_gpu_data(),
-								  rate, batch_size, momentum);
+
+			  UpdateBias_gpu(net_params[param_id]->count(),
+					  net_params[param_id]->gpu_data(), net_params[param_id]->mutable_gpu_data(),
+					  net_params[param_id]->gpu_diff(), net_params[param_id]->mutable_gpu_diff(),
+					  rate, batch_size, momentum);
 		  }
 		  else{
-			  yolo_update_weights_gpu(net_params[param_id]->count(),
-					  	  	  	  	  net_params[param_id]->mutable_gpu_diff(),
-									  this->history_[param_id]->mutable_gpu_data(),
-									  net_params[param_id]->mutable_gpu_data(),
-									  rate, batch_size, momentum, decay);
+
+			  UpdateWeights_gpu(net_params[param_id]->count(),
+					  net_params[param_id]->gpu_data(), net_params[param_id]->mutable_gpu_data(),
+					  net_params[param_id]->gpu_diff(), net_params[param_id]->mutable_gpu_diff(),
+					  rate, batch_size, momentum, decay);
 		  }
 
 #else
@@ -171,7 +131,6 @@ void YoloSolver<Dtype>::UpdateParams(){
 		     ++param_id) {
 		ComputeUpdateValue(param_id, rate, momentum_, decay_);
 	}
-	this->net_->Update();
 }
 
 template<typename Dtype>
@@ -183,11 +142,9 @@ void YoloSolver<Dtype>::ApplyUpdate(){
 	if(avg_loss_ == 0){
 			avg_loss_ = this->smoothed_loss_;
 	}
-
 	avg_loss_ = 0.9 * avg_loss_ + 0.1 *  this->smoothed_loss_;
 
-	LOG(INFO) << this->iter_ <<": "<<this->smoothed_loss_<< ", "<<avg_loss_<<" avg, "<<GetLearningRate()<<" rate";
-
+	LOG(INFO) << "Iteration: " << this->iter_ <<", Loss: "<<this->smoothed_loss_<< ", Avg. Loss: "<<avg_loss_<<", Current rate: "<<GetLearningRate();
 }
 
 INSTANTIATE_CLASS(YoloSolver);

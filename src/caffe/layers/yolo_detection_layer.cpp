@@ -248,6 +248,7 @@ void YoloDetectionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 
 	caffe_cpu_axpby(bottom[0]->count(), Dtype(1), diff_.cpu_data(), Dtype(0), bottom[0]->mutable_cpu_diff());
 
+	/*
 	Dtype min = 0;
 	Dtype max = 0;
 	for(int k=0; k<bottom[0]->count(); k++)
@@ -257,7 +258,7 @@ void YoloDetectionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 	}
 	LOG(INFO) << "detection.delta.min = " << min;
 	LOG(INFO) << "detection.delta.max = " << max;
-
+	*/
 }
 
 #ifdef CPU_ONLY
