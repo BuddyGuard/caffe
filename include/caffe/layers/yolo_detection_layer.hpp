@@ -6,7 +6,7 @@
 #include "caffe/blob.hpp"
 #include "caffe/layer.hpp"
 #include "caffe/proto/caffe.pb.h"
-#include "caffe/bounding_box.hpp"
+#include "caffe/util/yolo_utils.hpp"
 
 namespace caffe{
 
@@ -40,18 +40,6 @@ protected:
 
 	//virtual void Backward_gpu(const vector<Blob<Dtype>*>& bottom,
 	//		const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& top);
-
-	BoundingBox<Dtype> GetBoundingBox(const Dtype* blob, int start_idx);
-
-	Dtype BoxIOU(const BoundingBox<Dtype>& a, const BoundingBox<Dtype>& b);
-
-	Dtype BoxIntersection(const BoundingBox<Dtype>& a, const BoundingBox<Dtype>& b);
-
-	Dtype BoxUnion(const BoundingBox<Dtype>& a, const BoundingBox<Dtype>& b);
-
-	Dtype BoxOverlap(const Dtype x1, const Dtype w1, const Dtype x2, const Dtype w2);
-
-	Dtype BoxRMSE(const BoundingBox<Dtype>& a, const BoundingBox<Dtype>& b);
 
 	Blob<Dtype> diff_;
 

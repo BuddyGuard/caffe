@@ -4,6 +4,7 @@
 
 #include "caffe/layers/yolo_detection_layer.hpp"
 #include "caffe/util/math_functions.hpp"
+#include "caffe/util/yolo_utils.hpp"
 
 namespace caffe{
 
@@ -63,58 +64,6 @@ void YoloDetectionLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-BoundingBox<Dtype> YoloDetectionLayer<Dtype>::GetBoundingBox(const Dtype* blob, int start_idx){
-	BoundingBox<Dtype> bbox;
-	bbox.x = blob[start_idx+0];
-	bbox.y= blob[start_idx+1];
-	bbox.w = blob[start_idx+2];
-	bbox.h = blob[start_idx+3];
-	return bbox;
-}
-
-template <typename Dtype>
-Dtype YoloDetectionLayer<Dtype>::BoxOverlap(const Dtype x1, const Dtype w1, const Dtype x2, const Dtype w2){
-	Dtype l1 = x1 - w1/2;
-	Dtype l2 = x2 - w2/2;
-	Dtype left = l1 > l2 ? l1 : l2;
-	Dtype r1 = x1 + w1/2;
-	Dtype r2 = x2 + w2/2;
-	Dtype right = r1 < r2 ? r1 : r2;
-
-	return right - left;
-}
-
-template <typename Dtype>
-Dtype YoloDetectionLayer<Dtype>::BoxIntersection(const BoundingBox<Dtype>& a, const BoundingBox<Dtype>& b){
-	Dtype w = BoxOverlap(a.x, a.w, b.x, b.w);
-	Dtype h = BoxOverlap(a.y, a.h, b.y, b.h);
-
-	if(w < 0 || h < 0){
-		return Dtype(0);
-	}
-
-	Dtype area = w * h;
-	return area;
-}
-
-template <typename Dtype>
-Dtype YoloDetectionLayer<Dtype>::BoxUnion(const BoundingBox<Dtype>& a, const BoundingBox<Dtype>& b){
-	Dtype i = BoxIntersection(a, b);
-	Dtype u = a.w * a.h + b.w * b.h - i;
-	return u;
-}
-
-template <typename Dtype>
-Dtype YoloDetectionLayer<Dtype>::BoxRMSE(const BoundingBox<Dtype>& a, const BoundingBox<Dtype>& b){
-	return sqrt(pow(a.x-b.x, 2) + pow(a.y-b.y, 2) + pow(a.w - b.w, 2) + pow(a.h-b.h, 2));
-}
-
-template <typename Dtype>
-Dtype YoloDetectionLayer<Dtype>::BoxIOU(const BoundingBox<Dtype>& a, const BoundingBox<Dtype>& b){
-	return BoxIntersection(a, b) / BoxUnion(a, b);
-}
-
-template <typename Dtype>
 void YoloDetectionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 		const vector<Blob<Dtype>*>& top){
 
@@ -163,13 +112,13 @@ void YoloDetectionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 				avg_allcat += output[class_index+j];
 			}
 
-			BoundingBox<Dtype> bbox_truth = GetBoundingBox(truth, truth_index+1+classes_);
+			BoundingBox<Dtype> bbox_truth = get_bounding_box(truth, truth_index+1+classes_);
 			bbox_truth.x /= side_;
 			bbox_truth.y /= side_;
 
 			for(int j = 0; j < num_; ++j){
 				int box_index = bottom[0]->offset(b, locations*(classes_ + num_) + (i * num_ + j) * coords_);
-				BoundingBox<Dtype> bbox_out = GetBoundingBox(output, box_index);
+				BoundingBox<Dtype> bbox_out = get_bounding_box(output, box_index);
 				bbox_out.x /= side_;
 				bbox_out.y /= side_;
 
@@ -178,15 +127,16 @@ void YoloDetectionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 					bbox_out.h =  bbox_out.h * bbox_out.h;
 				}
 
-				Dtype iou = BoxIOU(bbox_out, bbox_truth);
-				Dtype rmse = BoxRMSE(bbox_out, bbox_truth);
+				Dtype iou = box_iou(bbox_out, bbox_truth);
+				Dtype rmse = box_rmse(bbox_out, bbox_truth);
 
 				if(best_iou > 0 || iou > 0){
 					if(iou > best_iou){
 						best_iou = iou;
 						best_index = j;
 					}
-				}else{
+				}
+				else{
 					if(rmse < best_rmse){
 						best_rmse = rmse;
 						best_index = j;
@@ -197,7 +147,7 @@ void YoloDetectionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 			int box_index = bottom[0]->offset(b, locations*(classes_ + num_) + (i * num_ + best_index) * coords_);
 			int tbox_index = truth_index + 1 + classes_;
 
-			BoundingBox<Dtype> bbox_out = GetBoundingBox(output, box_index);
+			BoundingBox<Dtype> bbox_out = get_bounding_box(output, box_index);
 			bbox_out.x /= side_;
 			bbox_out.y /= side_;
 
@@ -206,7 +156,7 @@ void YoloDetectionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 				bbox_out.h = bbox_out.h * bbox_out.h;
 			}
 
-			Dtype iou = BoxIOU(bbox_out, bbox_truth);
+			Dtype iou = box_iou(bbox_out, bbox_truth);
 
 			int p_index = bottom[0]->offset(b, locations * classes_ + i * num_ + best_index);
 			cost -= no_object_scale_ * pow(output[p_index], 2);
@@ -267,6 +217,5 @@ STUB_GPU(YoloDetectionLayer);
 
 INSTANTIATE_CLASS(YoloDetectionLayer);
 REGISTER_LAYER_CLASS(YoloDetection);
-
 
 }

@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<opencv_storage>
+	<!--Path to deploy prototxt-->
+	<model_file>/home/karthiksg/workspace/experiments/caffe/examples/yolo/yolo-tiny/yolo_tiny_deploy.prototxt</model_file>
+	<!--Path to trained caffemodel-->
+	<trained_file>/home/karthiksg/workspace/experiments/caffe/examples/yolo/yolo-tiny/yolo_tiny_train_exp2_iter_50000.caffemodel</trained_file>
+	<!--Path to txt file containing list of path's of evaluation images-->
+	<eval_data_file>/home/karthiksg/workspace/experiments/caffe/data/VOC/2012_val.txt</eval_data_file>
+	<!--Path and prefix for the results to be generated-->
+	<eval_data_prefix>/home/karthiksg/workspace/experiments/caffe/examples/yolo/evaluation/results/yolo_tiny_exp2_</eval_data_prefix>
+	<!--Don't change this-->
+	<prob_threshold>0.001</prob_threshold>
+	<!--Don't change this-->
+	<iou_threshold>0.5</iou_threshold>
+	<!--Number of classes-->
+	<classes>20</classes>
+	<!--Grid width -->
+	<grid_width>7</grid_width>
+	<!--Number of predictions/boxes per cell-->
+	<boxes_per_cell>2</boxes_per_cell>
+	<!--If true, predicted width and height will be raised to power of 2-->
+	<square>true</square>
+	<!--Don't change this-->
+	<only_objectness>false</only_objectness>
+  	<!--Class labels-->
+  	<labels>aeroplane bicycle bird boat bottle
+    	  	bus car cat chair cow diningtable
+    	  	dog horse motorbike person pottedplant
+    	  	sheep sofa train tvmonitor</labels>
+
+</opencv_storage>

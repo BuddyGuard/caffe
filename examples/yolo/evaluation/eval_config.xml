@@ -1,0 +1,16 @@
+<eval_config>
+	<!--Name of Dataset-->
+	<dataset>VOC2012</dataset>
+	<!--Root location of dataset--> 
+	<datadir>/home/karthiksg/workspace/experiments/caffe/data/VOC/VOCdevkit</datadir>
+	<!--Prefix of result files-->
+	<detrespath>/home/karthiksg/workspace/experiments/caffe/examples/yolo/evaluation/yolo-tiny-exp1/yolo_tiny_exp1_{}.txt</detrespath>
+	<!--Prefix of annotation files-->
+	<annopath>/home/karthiksg/workspace/experiments/caffe/data/VOC/VOCdevkit/VOC2012/Annotations/{}.xml</annopath>
+	<!--imageset path-->
+	<imgsetpath>/home/karthiksg/workspace/experiments/caffe/data/VOC/VOCdevkit/VOC2012/ImageSets/Main/val.txt</imgsetpath>
+	<!--classes-->
+	<classes>cat dog person</classes>
+	<!--Minimum overlap-->
+	<minoverlap>0.5</minoverlap>
+</eval_config>
