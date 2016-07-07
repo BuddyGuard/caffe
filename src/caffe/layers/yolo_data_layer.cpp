@@ -16,7 +16,7 @@
 #include "caffe/util/io.hpp"
 #include "caffe/util/math_functions.hpp"
 #include "caffe/util/rng.hpp"
-#include "caffe/bounding_box.hpp"
+#include "caffe/util/yolo_utils.hpp"
 
 #include "caffe/layers/yolo_data_layer.hpp"
 
@@ -49,8 +49,7 @@ void YoloDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
 
 	height_ = yolo_data_param.height();
 	width_ = yolo_data_param.width();
-	CHECK(height_ == width_) << "Image height and width should be same";
-
+	
 	std::ifstream infile(yolo_data_param.train_data_file().c_str());
 	CHECK(infile.good()) << "Failed to open training data file "
 	      << yolo_data_param.train_data_file() << std::endl;
