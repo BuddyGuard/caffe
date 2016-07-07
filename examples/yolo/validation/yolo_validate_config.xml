@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <opencv_storage>
 	<!--Path to deploy prototxt-->
-	<model_file>/home/karthiksg/workspace/experiments/caffe/examples/yolo/yolo-tiny/yolo_tiny_deploy.prototxt</model_file>
+	<model_file>/home/karthik/workspace/caffe/examples/yolo/yolo-tiny/yolo_tiny_deploy.prototxt</model_file>
 	<!--Path to trained caffemodel-->
-	<trained_file>/home/karthiksg/workspace/experiments/caffe/examples/yolo/yolo-tiny/yolo_tiny_train_exp2_iter_50000.caffemodel</trained_file>
+	<trained_file>/home/karthik/workspace/caffe/examples/yolo/yolo-tiny/exp3/yolo_tiny_exp3__iter_40000.caffemodel</trained_file>
 	<!--Path to txt file containing list of path's of evaluation images-->
-	<eval_data_file>/home/karthiksg/workspace/experiments/caffe/data/VOC/2012_val.txt</eval_data_file>
+	<eval_data_file>/home/data-store/corpora/bgobjects/indices/val.txt</eval_data_file>
 	<!--Path and prefix for the results to be generated-->
-	<eval_data_prefix>/home/karthiksg/workspace/experiments/caffe/examples/yolo/evaluation/results/yolo_tiny_exp2_</eval_data_prefix>
+	<eval_data_prefix>/home/karthik/workspace/caffe/examples/yolo/evaluation/results/eval_vatic_yolo_tiny_exp3_</eval_data_prefix>
 	<!--Don't change this-->
 	<prob_threshold>0.001</prob_threshold>
 	<!--Don't change this-->
