@@ -58,7 +58,7 @@ class YoloPredictor{
 public:
 	YoloPredictor(const string& eval_config_file);
 
-	void GenerateEvalData();
+	void Validate();
 
 private:
 	typedef struct {
@@ -113,11 +113,7 @@ YoloPredictor::YoloPredictor(const string& eval_config_file){
 	for (; itr != itrEnd; ++itr)
 		yolo_config_.labels.push_back(static_cast<std::string>(*itr));
 
-#ifndef CPU_ONLY
-  caffe::Caffe::set_mode(caffe::Caffe::CPU);
-#else
   caffe::Caffe::set_mode(caffe::Caffe::GPU);
-#endif
 
   net_ = new caffe::Net<float>(model_file, caffe::TEST);
   net_->CopyTrainedLayersFrom(trained_file);
@@ -153,54 +149,70 @@ YoloPredictor::YoloPredictor(const string& eval_config_file){
 
 }
 
-void YoloPredictor::GenerateEvalData(){
+void YoloPredictor::Validate(){
 
 	cv::Mat cv_img, resized_img;
-	for(int i=0; i < eval_files_.size(); ++i){
+	int batch_size = net_->input_blobs()[0]->num();
+	std::cout << "Starting validation with batch size " << batch_size << std::endl;
+	for(int i=0; i < eval_files_.size();){
 
-		std::cout << "Evaluating " << i+1 << " of " << eval_files_.size() << " images" << std::endl;
-
-		cv_img = cv::imread(eval_files_[i]);
-		int org_width = cv_img.cols;
-		int org_height = cv_img.rows;
-
-		cv::resize(cv_img, resized_img,
-				cv::Size(net_->input_blobs()[0]->height(), net_->input_blobs()[0]->width()));
-
+		std::vector<int> input_shape(4);
+		input_shape[0] = 1;
+		input_shape[1] = net_->input_blobs()[0]->channels();
+		input_shape[2] = net_->input_blobs()[0]->height();
+		input_shape[3] = net_->input_blobs()[0]->width();
+		if((i + batch_size) > eval_files_.size()){
+			net_->input_blobs()[0]->Reshape(input_shape);
+			net_->Reshape();
+			batch_size = 1;
+			std::cout << "Switching to batch size " << batch_size << std::endl;
+		}
+		float* input_data = net_->input_blobs()[0]->mutable_cpu_data();
 		caffe::Blob<float> transformed_data;
+		transformed_data.Reshape(input_shape);
 
-		std::vector<int> top_shape = data_transformer_->InferBlobShape(resized_img);
+		std::vector<int> org_width(batch_size);
+		std::vector<int> org_height(batch_size);
+		for(int j = 0; j < batch_size; ++j){
 
-		transformed_data.Reshape(top_shape);
+			cv_img = cv::imread(eval_files_[i+j]);
+			org_width[j] = cv_img.cols;
+			org_height[j] = cv_img.rows;
 
-		float* input_data;
+			cv::resize(cv_img, resized_img,
+					cv::Size(net_->input_blobs()[0]->width(), net_->input_blobs()[0]->height()));
 
-		input_data = net_->input_blobs()[0]->mutable_cpu_data();
-		transformed_data.set_cpu_data(input_data);
+			int input_offset = net_->input_blobs()[0]->offset(j);
+			transformed_data.set_cpu_data(input_data + input_offset);
 
-		data_transformer_->Transform(resized_img, &transformed_data);
+			data_transformer_->Transform(resized_img, &transformed_data);
+		}
 
 		net_->Forward();
 
-		const float* predictions;
+		const float* predictions = net_->output_blobs()[0]->cpu_data();
+		for(int j = 0; j < batch_size; ++j){
 
-		predictions = net_->output_blobs()[0]->cpu_data();
+			int offset = net_->output_blobs()[0]->offset(j);
 
-		convert_yolo_detections(predictions, probs_, boxes_,
-				yolo_config_.grid_width, yolo_config_.boxes_per_cell,
-				yolo_config_.classes, yolo_config_.square,
-				org_width, org_height, yolo_config_.only_objectness,
-				yolo_config_.prob_threshold);
+			convert_yolo_detections(predictions+offset, probs_, boxes_,
+					yolo_config_.grid_width, yolo_config_.boxes_per_cell,
+					yolo_config_.classes, yolo_config_.square,
+					org_width[j], org_height[j], yolo_config_.only_objectness,
+					yolo_config_.prob_threshold);
 
-		non_maximum_suppression(boxes_, probs_, num_boxes_, yolo_config_.classes,
-				yolo_config_.iou_threshold);
+			non_maximum_suppression(boxes_, probs_, num_boxes_, yolo_config_.classes,
+					yolo_config_.iou_threshold);
 
-		string file_id = get_file_name(eval_files_[i]);
+			string file_id = get_file_name(eval_files_[i+j]);
 
-		print_yolo_detections(eval_result_files_, file_id, boxes_, probs_,
-				num_boxes_, yolo_config_.classes, org_width, org_height);
+			print_yolo_detections(eval_result_files_, file_id, boxes_, probs_,
+					num_boxes_, yolo_config_.classes, org_width[j], org_height[j]);
+		}
+
+		i += batch_size;
+		std::cout << "Validated " << i << " of " << eval_files_.size() << " images" << std::endl;
 	}
-
 }
 
 int main(int argc, char** argv) {
@@ -217,7 +229,7 @@ int main(int argc, char** argv) {
 
   YoloPredictor yolo_predictor(eval_config_file);
 
-  yolo_predictor.GenerateEvalData();
+  yolo_predictor.Validate();
 
 }
 #else

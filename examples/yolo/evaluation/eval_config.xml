@@ -4,7 +4,7 @@
 	<!--Root location of dataset--> 
 	<datadir>/home/karthiksg/workspace/experiments/caffe/data/VOC/VOCdevkit</datadir>
 	<!--Prefix of result files-->
-	<detrespath>/home/karthiksg/workspace/experiments/caffe/examples/yolo/evaluation/yolo-tiny-exp1/yolo_tiny_exp1_{}.txt</detrespath>
+	<detrespath>/home/karthiksg/workspace/experiments/caffe/examples/yolo/evaluation/results/yolo_tiny_exp2_{}.txt</detrespath>
 	<!--Prefix of annotation files-->
 	<annopath>/home/karthiksg/workspace/experiments/caffe/data/VOC/VOCdevkit/VOC2012/Annotations/{}.xml</annopath>
 	<!--imageset path-->
