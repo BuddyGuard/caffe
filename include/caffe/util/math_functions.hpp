@@ -105,6 +105,11 @@ Dtype caffe_cpu_strided_dot(const int n, const Dtype* x, const int incx,
 template <typename Dtype>
 Dtype caffe_cpu_asum(const int n, const Dtype* x);
 
+// Taken from https://github.com/Caenorst/caffe/tree/ac154d322c4e98b2e62cd64fb141e370f720709f
+// Prune a blob with a mask according to the coeff% lowest absolute values of x.
+template <typename Dtype>
+void caffe_cpu_prune(const int n, const Dtype coeff, Dtype* x, Dtype *mask);
+
 // the branchless, type-safe version from
 // http://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
 template<typename Dtype>

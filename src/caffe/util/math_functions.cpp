@@ -373,4 +373,30 @@ void caffe_cpu_scale<double>(const int n, const double alpha, const double *x,
   cblas_dscal(n, alpha, y, 1);
 }
 
+// Taken from https://github.com/Caenorst/caffe/blob/ac154d322c4e98b2e62cd64fb141e370f720709f/src/caffe/util/math_functions.cpp
+template <typename Dtype>
+void caffe_cpu_prune(const int n, const Dtype coeff, Dtype* x,
+                            Dtype* mask) {
+  // Partial sort to find the %coeff lowest absolute values of x
+  std::vector<std::pair<Dtype, int> > indexed_x;
+  for (int k = 0; k < n; ++k) {
+    indexed_x.push_back(std::make_pair(std::abs(x[k]), k));
+  }
+  std::partial_sort(
+          indexed_x.begin(), indexed_x.begin() + std::floor(coeff*n),
+          indexed_x.end(), std::less<std::pair<Dtype, int> >());
+  for (int k = 0; k < std::floor(coeff * n); k++) {
+    x[indexed_x[k].second] = 0;
+    mask[indexed_x[k].second] = 0;
+  }
+}
+
+template
+void caffe_cpu_prune<double>(const int n, const double coeff, double* x,
+                           double* mask);
+
+template
+void caffe_cpu_prune<float>(const int n, const float coeff, float* x,
+                           float* mask);
+
 }  // namespace caffe
