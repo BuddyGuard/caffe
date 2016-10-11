@@ -436,7 +436,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 149 (last added: recurrent_param)
+// LayerParameter next available layer-specific ID: 150 (last added: pruning_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -526,6 +526,7 @@ message LayerParameter {
   optional PowerParameter power_param = 122;
   optional PReLUParameter prelu_param = 131;
   optional PriorBoxParameter prior_box_param = 203;
+  optional PruningParameter pruning_param = 149;
   optional PythonParameter python_param = 130;
   optional RecurrentParameter recurrent_param = 148;
   optional ReductionParameter reduction_param = 136;
@@ -1326,6 +1327,11 @@ message PriorBoxParameter {
   optional bool clip = 5 [default = true];
   // Variance for adjusting the prior bboxes.
   repeated float variance = 6;
+}
+
+message PruningParameter {
+  // Pruning coefficient for deep compression
+  optional float coeff = 1 [default = 0];
 }
 
 message PythonParameter {
