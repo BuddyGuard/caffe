@@ -92,6 +92,10 @@ class BaseConvolutionLayer : public Layer<Dtype> {
   bool bias_term_;
   bool is_1x1_;
   bool force_nd_im2col_;
+  
+  bool pruned_;
+  vector<shared_ptr<Blob<Dtype> > > masks_; // masks for holding pruned data
+  Dtype pruning_coeff_; // pruning rate or percentage of parameters to be set to zeromake
 
  private:
   // wrap im2col/col2im so we don't have to remember the (long) argument lists
