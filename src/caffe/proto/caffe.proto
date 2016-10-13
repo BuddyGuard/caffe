@@ -154,6 +154,14 @@ message AnnotatedDatum {
   repeated AnnotationGroup annotation_group = 3;
 }
 
+message SparseDatum {
+  optional int32 size = 1 [default = 0];
+  optional int32 nnz = 2 [default = 0];  //number of non zeros entries
+  repeated int32 indices = 3 [packed=true];
+  optional int32 label = 4;
+  repeated float data = 5 [packed=true];
+}
+
 message FillerParameter {
   // The filler type.
   optional string type = 1 [default = 'constant'];
