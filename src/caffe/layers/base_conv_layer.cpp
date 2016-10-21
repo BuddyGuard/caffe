@@ -141,9 +141,12 @@ void BaseConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   bias_term_ = this->layer_param_.convolution_param().bias_term();
   // Pruning parameters
   pruning_coeff_ = this->layer_param_.pruning_param().coeff();
+  prune_bias_ = this->layer_param_.pruning_param().prune_bias();
+  retrain_ = this->layer_param_.pruning_param().retrain();
   CHECK_GE(pruning_coeff_, 0);
   CHECK_GT(1, pruning_coeff_);
   pruned_ = (pruning_coeff_ == 0);
+  masks_filled_ = ( retrain_ == false );
   vector<int> bias_shape(bias_term_, num_output_);
   if (this->blobs_.size() > 0) {
     CHECK_EQ(1 + bias_term_, this->blobs_.size())
@@ -168,8 +171,12 @@ void BaseConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       this->blobs_.resize(1);
     }
     // Resize masks w.r.t blobs
-    if (pruning_coeff_ > 0) {
-      masks_.resize(this->blobs_.size());
+    if (pruning_coeff_ > 0 || (!masks_filled_)) {
+      if (prune_bias_) {
+        masks_.resize(1); // Mask only weights	
+      } else {
+        masks_.resize(this->blobs_.size());
+      }
     }
     // Initialize and fill the weights:
     // output channels x input channels per-group x kernel height x kernel width
@@ -178,7 +185,7 @@ void BaseConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
         this->layer_param_.convolution_param().weight_filler()));
     weight_filler->Fill(this->blobs_[0].get());
     // Initialize weight mask
-    if (pruning_coeff_ != 0) {
+    if (pruning_coeff_ != 0 || (!masks_filled_)) {
       masks_[0].reset(new Blob<Dtype>(weight_shape));
       caffe_set<Dtype>(this->blobs_[0]->count(), (Dtype)1.,
           masks_[0]->mutable_cpu_data());
@@ -190,10 +197,12 @@ void BaseConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
           this->layer_param_.convolution_param().bias_filler()));
       bias_filler->Fill(this->blobs_[1].get());
       // Initialize bias mask
-      if (pruning_coeff_ != 0) {
-        masks_[1].reset(new Blob<Dtype>(bias_shape));
-        caffe_set<Dtype>(this->blobs_[1]->count(), (Dtype)1.,
-            masks_[1]->mutable_cpu_data());
+      if (pruning_coeff_ != 0 || (!masks_filled_)) {
+      	if (!prune_bias_) {
+          masks_[1].reset(new Blob<Dtype>(bias_shape));
+          caffe_set<Dtype>(this->blobs_[1]->count(), (Dtype)1.,
+              masks_[1]->mutable_cpu_data());
+        }
       }
     }
   }

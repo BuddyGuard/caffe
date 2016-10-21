@@ -110,6 +110,11 @@ Dtype caffe_cpu_asum(const int n, const Dtype* x);
 template <typename Dtype>
 void caffe_cpu_prune(const int n, const Dtype coeff, Dtype* x, Dtype *mask);
 
+// Fill mask for already pruned network (for example, class blind pruning is done outside)
+template <typename Dtype>
+void caffe_cpu_fill_mask(const int n, const Dtype* x, Dtype *mask);
+
+
 // the branchless, type-safe version from
 // http://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
 template<typename Dtype>

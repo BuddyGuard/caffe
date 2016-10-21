@@ -11,11 +11,22 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   if (!this->pruned_) {
     caffe_cpu_prune(this->blobs_[0]->count(), this->pruning_coeff_,
           this->blobs_[0]->mutable_cpu_data(), this->masks_[0]->mutable_cpu_data());
-    if (this->bias_term_) {
+    if (this->bias_term_ && this->prune_bias_) {
       caffe_cpu_prune(this->blobs_[1]->count(), this->pruning_coeff_,
           this->blobs_[1]->mutable_cpu_data(), this->masks_[1]->mutable_cpu_data());
     }
     this->pruned_ = true;
+  }
+  // fill masks for already pruned caffemodel
+  if(!this->masks_filled_) {
+  	 caffe_cpu_fill_mask(this->blobs_[0]->count(), this->blobs_[0]->cpu_data(), 
+  	      this->masks_[0]->mutable_cpu_data());
+     if (this->bias_term_ && this->prune_bias_) {
+        caffe_cpu_fill_mask(this->blobs_[1]->count(), this->blobs_[1]->cpu_data(), 
+          this->masks_[1]->mutable_cpu_data());
+     }
+     this->pruned_ = true;
+     this->masks_filled_ = true;
   }
   const Dtype* weight = this->blobs_[0]->gpu_data();
   for (int i = 0; i < bottom.size(); ++i) {
@@ -63,12 +74,12 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       }
     }
   }
-  if (this->pruning_coeff_ > 0) {
+  if (this->pruning_coeff_ > 0 || this->retrain_) {
     if (this->param_propagate_down_[0]) {
       caffe_gpu_mul(this->blobs_[0]->count(), this->blobs_[0]->gpu_diff(),
           this->masks_[0]->gpu_data(), this->blobs_[0]->mutable_gpu_diff());
     }
-    if (this->bias_term_ && this->param_propagate_down_[1]) {
+    if (this->bias_term_ && this->prune_bias_ && this->param_propagate_down_[1]) {
       caffe_gpu_mul(this->blobs_[1]->count(), this->blobs_[1]->gpu_diff(),
           this->masks_[1]->gpu_data(), this->blobs_[1]->mutable_gpu_diff());
     }

@@ -391,12 +391,26 @@ void caffe_cpu_prune(const int n, const Dtype coeff, Dtype* x,
   }
 }
 
-template
+template 
 void caffe_cpu_prune<double>(const int n, const double coeff, double* x,
                            double* mask);
 
-template
+template 
 void caffe_cpu_prune<float>(const int n, const float coeff, float* x,
                            float* mask);
 
+template <typename Dtype>
+void caffe_cpu_fill_mask(const int n, const Dtype* x, Dtype *mask) {
+	for (int i = 0; i < n; ++i) {
+		if (x[i]==0) {
+			mask[i] = Dtype(0);
+		}
+	}
+}
+
+template 
+void caffe_cpu_fill_mask<float>(const int n, const float* x, float *mask);
+
+template 
+void caffe_cpu_fill_mask<double>(const int n, const double* x, double *mask);
 }  // namespace caffe

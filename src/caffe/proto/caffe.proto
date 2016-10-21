@@ -1340,6 +1340,10 @@ message PriorBoxParameter {
 message PruningParameter {
   // Pruning coefficient for deep compression
   optional float coeff = 1 [default = 0];
+  // Already pruned
+  optional bool retrain = 2 [default = false];
+  // Prune bias
+  optional bool prune_bias = 3 [default = false];
 }
 
 message PythonParameter {
