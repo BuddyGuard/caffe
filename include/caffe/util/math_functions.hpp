@@ -114,6 +114,8 @@ void caffe_cpu_prune(const int n, const Dtype coeff, Dtype* x, Dtype *mask);
 template <typename Dtype>
 void caffe_cpu_fill_mask(const int n, const Dtype* x, Dtype *mask);
 
+template <typename Dtype>
+int caffe_cpu_zero_count(const int n, const Dtype* x);
 
 // the branchless, type-safe version from
 // http://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c

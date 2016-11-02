@@ -413,4 +413,21 @@ void caffe_cpu_fill_mask<float>(const int n, const float* x, float *mask);
 
 template 
 void caffe_cpu_fill_mask<double>(const int n, const double* x, double *mask);
+
+template <typename Dtype>
+int caffe_cpu_zero_count(const int n, const Dtype* x) {
+	int count = 0;
+	for (int i = 0; i < n; ++i) {
+		if (x[i]==0) {
+			count++;
+		}
+	}
+	return count;
+}
+
+template 
+int caffe_cpu_zero_count<float>(const int n, const float* x);
+
+template 
+int caffe_cpu_zero_count<double>(const int n, const double* x);
 }  // namespace caffe
