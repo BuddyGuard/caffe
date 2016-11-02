@@ -172,11 +172,11 @@ void BaseConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     }
     // Resize masks w.r.t blobs
     if (pruning_coeff_ > 0 || (!masks_filled_)) {
-      if (prune_bias_) {
-        masks_.resize(1); // Mask only weights	
-      } else {
-        masks_.resize(this->blobs_.size());
-      }
+        if (prune_bias_) {
+            mask_.resize(2); // Mask bias also
+        } else {
+            masks_.resize(1); // Mask only weights	
+        }
     }
     // Initialize and fill the weights:
     // output channels x input channels per-group x kernel height x kernel width
@@ -198,7 +198,7 @@ void BaseConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       bias_filler->Fill(this->blobs_[1].get());
       // Initialize bias mask
       if (pruning_coeff_ != 0 || (!masks_filled_)) {
-      	if (!prune_bias_) {
+      	if (prune_bias_) {
           masks_[1].reset(new Blob<Dtype>(bias_shape));
           caffe_set<Dtype>(this->blobs_[1]->count(), (Dtype)1.,
               masks_[1]->mutable_cpu_data());
