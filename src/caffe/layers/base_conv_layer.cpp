@@ -173,7 +173,7 @@ void BaseConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     // Resize masks w.r.t blobs
     if (pruning_coeff_ > 0 || (!masks_filled_)) {
         if (prune_bias_) {
-            mask_.resize(2); // Mask bias also
+            masks_.resize(2); // Mask bias also
         } else {
             masks_.resize(1); // Mask only weights	
         }
