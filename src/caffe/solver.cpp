@@ -526,6 +526,12 @@ void Solver<Dtype>::TestDetection(const int test_net_id) {
       mAP += APs[label];
     }
     mAP /= num_pos.size();
+    if (param_.has_target_map()) {
+        if (mAP >= param_.target_map()) {
+            LOG(INFO) << "Target mAP " << mAP << " reached";
+            Snapshot();
+        }
+    }
     const int output_blob_index = test_net->output_blob_indices()[i];
     const string& output_name = test_net->blob_names()[output_blob_index];
     LOG(INFO) << "    Test net output #" << i << ": " << output_name << " = "

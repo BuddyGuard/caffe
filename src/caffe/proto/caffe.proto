@@ -220,7 +220,7 @@ message NetParameter {
 // NOTE
 // Update the next available ID when you add a new SolverParameter field.
 //
-// SolverParameter next available ID: 45 (last added: batch_size)
+// SolverParameter next available ID: 46 (last added: target_mAP)
 message SolverParameter {
   //////////////////////////////////////////////////////////////////////////////
   // Specifying the train and test networks
@@ -377,6 +377,9 @@ message SolverParameter {
   
   // Batch size for YoloSolver
   optional int32 batch_size = 44;
+
+  // Target mAP to stop retraining
+  optional float target_map = 45; 
 }
 
 // A message that stores the solver snapshots
@@ -833,7 +836,7 @@ message ConvolutionParameter {
     CAFFE = 1;
     CUDNN = 2;
   }
-  optional Engine engine = 15 [default = DEFAULT];
+  optional Engine engine = 15 [default = CAFFE];
 
   // The axis to interpret as "channels" when performing convolution.
   // Preceding dimensions are treated as independent inputs;
