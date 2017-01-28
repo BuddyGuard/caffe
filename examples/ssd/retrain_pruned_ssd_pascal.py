@@ -187,7 +187,7 @@ if use_batchnorm:
     base_lr = 0.0004
 else:
     # A learning rate for batch_size = 1, num_gpus = 1.
-    base_lr = 0.000004
+    base_lr = 0.00000004
 
 # Modify the job name if you want.
 job_name = "SSD_{}".format(resize)
@@ -195,13 +195,13 @@ job_name = "SSD_{}".format(resize)
 model_name = "VGG_VOC0712_{}".format(job_name)
 
 # Directory which stores the model .prototxt file.
-save_dir = "models/VGGNet/VOC0712/{}_pruned".format(job_name)
+save_dir = "models/VGGNet/VOC0712/{}_pruned_40_50_60_70".format(job_name)
 # Directory which stores the snapshot of models.
-snapshot_dir = "models/VGGNet/VOC0712/{}_pruned".format(job_name)
+snapshot_dir = "models/VGGNet/VOC0712/{}_pruned_40_50_60_70".format(job_name)
 # Directory which stores the job script and log file.
-job_dir = "jobs/VGGNet/VOC0712/{}_pruned".format(job_name)
+job_dir = "jobs/VGGNet/VOC0712/{}_pruned_40_50_60_70".format(job_name)
 # Directory which stores the detection results.
-output_result_dir = "{}/data/VOCdevkit/results/VOC2007/{}_pruned/Main".format(os.environ['HOME'], job_name)
+output_result_dir = "{}/workspace/SSD/Datasets/VOCdevkit/results/{}_pruned_40_50_60_70".format(os.environ['HOME'], job_name)
 
 # model definition files.
 train_net_file = "{}/train.prototxt".format(save_dir)
@@ -216,7 +216,7 @@ job_file = "{}/{}.sh".format(job_dir, model_name)
 # Stores the test image names and sizes. Created by data/VOC0712/create_list.sh
 name_size_file = "data/VOC0712/test_name_size.txt"
 # The pretrained model. We use the Fully convolutional reduced (atrous) VGGNet.
-pretrain_model = "models/VGGNet/VOC0712/pruned_models/VGG_VOC0712_SSD_300x300_iter_60000_pruned_40.caffemodel"
+pretrain_model = "models/VGGNet/VGG_VOC0712_SSD_300x300_iter_60000_40%_50%_60%_70%_pruned.caffemodel"
 # Stores LabelMapItem.
 label_map_file = "data/VOC0712/labelmap_voc.prototxt"
 
@@ -283,7 +283,7 @@ clip = True
 
 # Solver parameters.
 # Defining which GPUs to use.
-gpus = "0"
+gpus = "0,1,2,3"
 gpulist = gpus.split(",")
 num_gpus = len(gpulist)
 
@@ -310,11 +310,12 @@ elif normalization_mode == P.Loss.FULL:
   base_lr *= 2000.
 
 # Which layers to freeze (no backward) during training.
-freeze_layers = ['conv1_1', 'conv1_2', 'conv2_1', 'conv2_2']
+#freeze_layers = ['conv1_1', 'conv1_2', 'conv2_1', 'conv2_2']
+freeze_layers = []
 
 # Evaluate on whole test set.
 num_test_image = 4952
-test_batch_size = 1
+test_batch_size = 8
 test_iter = num_test_image / test_batch_size
 
 solver_param = {
@@ -322,12 +323,12 @@ solver_param = {
     'base_lr': base_lr,
     'weight_decay': 0.0005,
     'lr_policy': "step",
-    'stepsize': 1000,
+    'stepsize': 30000,
     'gamma': 0.1,
     'momentum': 0.9,
     'iter_size': iter_size,
-    'max_iter': 1000,
-    'snapshot': 500,
+    'max_iter': 60000,
+    'snapshot': 10000,
     'display': 10,
     'average_loss': 10,
     'type': "SGD",
@@ -337,9 +338,10 @@ solver_param = {
     'snapshot_after_train': True,
     # Test parameters
     'test_iter': [test_iter],
-    'test_interval': 500,
+    'test_interval': 10000,
     'eval_type': "detection",
     'ap_version': "11point",
+    'target_map': 0.72,
     'test_initialization': False,
     }
 

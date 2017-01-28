@@ -7,11 +7,11 @@ from collections import OrderedDict
 
 caffe.set_mode_gpu()
 
-caffe_root = '/home/karthiksg/workspace/caffe'
+caffe_root = '/home/karthik/workspace/caffe'
 model = os.path.join(caffe_root, 'models/VGGNet/VOC0712/SSD_300x300/deploy.prototxt')
-caffemodel = os.path.join(caffe_root, 'models/VGGNet/VOC0712/SSD_300x300/VGG_VOC0712_SSD_300x300_iter_60000.caffemodel')
+caffemodel = os.path.join(caffe_root, 'models/VGGNet/VOC0712/SSD_300x300_pruned_40_50_60/VGG_VOC0712_SSD_300x300_iter_60000.caffemodel')
 exclude_layers = ['conv4_3_norm'] # Skip this layer's parameters
-pruning_coeff = 0.30 # Percentage of parameters to be removed 
+pruning_coeff = 0.70 # Percentage of parameters to be removed 
 
 def save_indexed_params():
 	net = caffe.Net(model, caffemodel, caffe.TEST)

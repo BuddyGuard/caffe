@@ -58,7 +58,7 @@ resume_training = True
 remove_old_models = False
 
 # Pruned percentage
-prune = 50
+prune = 90
 
 # The database file for training data. Created by data/VOC0712/create_data.sh
 train_data = "examples/VOC0712/VOC0712_trainval_lmdb"
@@ -198,7 +198,7 @@ save_dir = "models/ResNet/VOC0712/{}_pruned_{}".format(job_name, prune)
 # Directory which stores the snapshot of models.
 snapshot_dir = "models/ResNet/VOC0712/{}_pruned_{}".format(job_name, prune)
 # Directory which stores the job script and log file.
-job_dir = "jobs/ResNet/VOC0712/{}_pruned_40".format(job_name, prune)
+job_dir = "jobs/ResNet/VOC0712/{}_pruned_{}".format(job_name, prune)
 # Directory which stores the detection results.
 output_result_dir = "{}/data/VOCdevkit/results/VOC2007/{}_pruned_{}/Main".format(os.environ['HOME'], job_name, prune)
 
@@ -308,7 +308,7 @@ elif normalization_mode == P.Loss.FULL:
 
 # Evaluate on whole test set.
 num_test_image = 4952
-test_batch_size = 1
+test_batch_size = 2
 test_iter = num_test_image / test_batch_size
 
 solver_param = {
@@ -316,11 +316,11 @@ solver_param = {
     'base_lr': base_lr,
     'weight_decay': 0.0005,
     'lr_policy': "step",
-    'stepsize': 5000,
+    'stepsize': 10000,
     'gamma': 0.1,
     'momentum': 0.9,
     'iter_size': iter_size,
-    'max_iter': 10000,
+    'max_iter': 20000,
     'snapshot': 2000,
     'display': 10,
     'average_loss': 10,
