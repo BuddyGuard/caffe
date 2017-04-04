@@ -11,9 +11,15 @@ caffe.set_mode_gpu()
 caffe_root = '/home/karthik/workspace/caffe'
 
 # SSD VGGNet PASCAL LAYER INDEPENDENT
+#prototxt = os.path.join(caffe_root, 'models/VGGNet/VOC0712/SSD_300x300/deploy.prototxt_bkp')
+#pruned_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Independent_Pruning')
+#clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Clustering_Layer_Independent_Pruned_Models')
+#exclude_layers = ['conv4_3_norm'] # Skip this layer's parameters
+
+# SSD VGGNet PASCAL LAYER WISE
 prototxt = os.path.join(caffe_root, 'models/VGGNet/VOC0712/SSD_300x300/deploy.prototxt_bkp')
-pruned_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Independent_Pruning')
-clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Clustering_Layer_Independent_Pruned_Models')
+pruned_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Wise_Pruning')
+clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Clustering_Layer_Wise_Pruned_Models')
 exclude_layers = ['conv4_3_norm'] # Skip this layer's parameters
 
 # Check Clustered Models path
@@ -44,7 +50,10 @@ for model in pruned_models:
                         for w in xrange(weights.shape[3]):
                             if weights[n,c,h,w]:
                                 key = '{}-{}-{}-{}-{}'.format(name, n, c, h, w)
-                                weights_dict[key] = weights[n,c,h,w]
+                                if weights[n,c,h,w]:
+                                    weights_dict[key] = weights[n,c,h,w]
+            print 'Total params : ',weights.size
+            print 'Number of non-zero params : ', len(weights_dict.keys())
             # Find minimum and maximum values
             min_val = weights.flatten().min()
             max_val = weights.flatten().max()
