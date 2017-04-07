@@ -12,22 +12,31 @@ import sys
 
 usage = '''
 Usage:
-    python score_pruned_ssd_pascal_resnet.py <prune-tpye> <prune-percent>
-                or
-    python score_pruned_ssd_pascal_resnet.py <prune-type> <prune-percent> <std-dev>
-
-    <prune-type> : layer_indep, layer_wise
+        python score_pruned_ssd_pascal_vggnet.py <prune> <prune-tpye> <prune-percent>
+                                or
+        python score_pruned_ssd_pascal_vggnet.py <prune> <prune-type> <prune-percent> <std-dev>
+                                or
+        python score_pruned_ssd_pascal_vggnet.py <cluster> <prune-tpye> <prune-percent>
+                                or
+        python score_pruned_ssd_pascal_vggnet.py <cluster> <prune-type> <prune-percent> <std-dev>
+        
+        <prune-type> : layer_indep, layer_wise
 '''
 
-if len(sys.argv) == 3 or len(sys.argv) == 4:
-    prune_type = sys.argv[1]
-    prune_percent = sys.argv[2]
-    if len(sys.argv) == 4:
-        std_dev = sys.argv[3]
+prune = False
+cluster = False
+if len(sys.argv) == 4 or len(sys.argv) == 5:
+    if sys.argv[1] == 'prune':
+        prune = True
+    elif sys.argv[1] == 'cluster':
+        cluster = True
+    prune_type = sys.argv[2]
+    prune_percent = sys.argv[3]
+    if len(sys.argv) == 5:
+        std_dev = sys.argv[4]
 else:
    print(usage)
    sys.exit()
-
 
 #Add extra layers on top of a "base" network (e.g. VGGNet or Inception).
 def AddExtraLayers(net, use_batchnorm=True):
@@ -515,10 +524,14 @@ with open(job_file, 'w') as f:
   f.write('--solver="{}" \\\n'.format(solver_file))
   f.write('--weights="{}" \\\n'.format(pretrain_model))
   if solver_param['solver_mode'] == P.Solver.GPU:
-    if prune_type == 'layer_indep':
-        f.write('--gpu {} 2>&1 | tee -a {}/{}_{}%_{}_pruned.log\n'.format(gpus, job_dir, model_name, prune_percent, prune_type))
-    elif prune_type == 'layer_wise':
-        f.write('--gpu {} 2>&1 | tee -a {}/{}_{}_stddev_{}%_{}_pruned.log\n'.format(gpus, job_dir, model_name, std_dev, prune_percent, prune_type))
+    if prune_type == 'layer_indep' and prune:
+        f.write('--gpu {} 2>&1 | tee {}/{}_{}%_{}_pruned.log\n'.format(gpus, job_dir, model_name, prune_percent, prune_type))
+    elif prune_type == 'layer_indep' and cluster:
+        f.write('--gpu {} 2>&1 | tee {}/{}_{}%_{}_pruned_clustered.log\n'.format(gpus, job_dir, model_name, prune_percent, prune_type))
+    elif prune_type == 'layer_wise' and prune:
+        f.write('--gpu {} 2>&1 | tee {}/{}_{}_stddev_{}%_{}_pruned.log\n'.format(gpus, job_dir, model_name, std_dev, prune_percent, prune_type))
+    elif prune_type == 'layer_wise' and cluster:
+        f.write('--gpu {} 2>&1 | tee {}/{}_{}_stddev_{}%_{}_pruned_clustered.log\n'.format(gpus, job_dir, model_name, std_dev, prune_percent, prune_type))
   else:
     f.write('2>&1 | tee {}/{}.log\n'.format(job_dir, model_name))
 
