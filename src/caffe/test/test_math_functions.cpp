@@ -119,6 +119,64 @@ TYPED_TEST(CPUMathFunctionsTest, TestCopy) {
   }
 }
 
+template <typename TypeParam>
+class MathFunctionsForDeepCompressionTest : public MultiDeviceTest<TypeParam> {
+  typedef typename TypeParam::Dtype Dtype;
+
+ protected:
+  MathFunctionsForDeepCompressionTest()
+      : blob_(new Blob<Dtype>()),
+        centroids_(4) {
+  }
+
+  virtual void SetUp() {
+    this->blob_->Reshape(1, 1, 1, 10);
+    Dtype* blob_data = this->blob_->mutable_cpu_data();
+    Dtype* blob_diff = this->blob_->mutable_cpu_diff();
+    for(int i=0; i < this->blob_->count(); ++i){
+        blob_data[i] = Dtype(i % centroids_);
+        blob_diff[i] = Dtype(i % centroids_) * Dtype(0.1);
+    }
+  }
+
+  virtual ~MathFunctionsForDeepCompressionTest() {
+    delete blob_;
+  }
+
+  Blob<Dtype>* const blob_;
+  int centroids_;
+};
+
+template <typename Dtype>
+class CPUMathFunctionsForDeepCompressionTest
+  : public MathFunctionsForDeepCompressionTest<CPUDevice<Dtype> > {
+};
+
+TYPED_TEST_CASE(CPUMathFunctionsForDeepCompressionTest, TestDtypes);
+
+TYPED_TEST(CPUMathFunctionsForDeepCompressionTest, TestFillCentroidMask) {
+    int n = this->blob_->count();
+    TypeParam* centroids_mask = new TypeParam[n];
+    const TypeParam* blob_data = this->blob_->cpu_data();
+    caffe_cpu_fill_cluster_mask(n, blob_data, centroids_mask);
+    for(int i=0; i < n; ++i){
+        EXPECT_EQ(centroids_mask[i], TypeParam(i % this->centroids_));
+    }
+    delete centroids_mask;
+}
+
+TYPED_TEST(CPUMathFunctionsForDeepCompressionTest, TestClusteringGradients) {
+    int n = this->blob_->count();
+    TypeParam* centroids_mask = new TypeParam[n];
+    const TypeParam* blob_data = this->blob_->cpu_data();
+    const TypeParam* blob_diff = this->blob_->cpu_diff();
+    TypeParam* blob_mutable_diff = this->blob_->mutable_cpu_diff();
+    caffe_cpu_fill_cluster_mask(n, blob_data, centroids_mask);
+    caffe_cpu_cluster_gradients(n, blob_diff, centroids_mask, blob_mutable_diff);
+    // TODO: @karthik.govindappa : Check clustered gradients
+    delete centroids_mask;
+}
+
 #ifndef CPU_ONLY
 
 template <typename Dtype>

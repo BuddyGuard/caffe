@@ -2,6 +2,8 @@
 #include <boost/random.hpp>
 
 #include <limits>
+#include <map>
+#include <set>
 
 #include "caffe/common.hpp"
 #include "caffe/util/math_functions.hpp"
@@ -158,9 +160,21 @@ void caffe_mul<float>(const int n, const float* a, const float* b,
 }
 
 template <>
+void caffe_mul<float>(const int n, const float* a, const unsigned int* b,
+    float* y) {
+  vsMul(n, a, (const float*)b, y);
+}
+
+template <>
 void caffe_mul<double>(const int n, const double* a, const double* b,
     double* y) {
   vdMul(n, a, b, y);
+}
+
+template <>
+void caffe_mul<double>(const int n, const double* a, const unsigned int* b,
+    double* y) {
+  vdMul(n, a, (const double*)b, y);
 }
 
 template <>
@@ -373,34 +387,8 @@ void caffe_cpu_scale<double>(const int n, const double alpha, const double *x,
   cblas_dscal(n, alpha, y, 1);
 }
 
-// Taken from https://github.com/Caenorst/caffe/blob/ac154d322c4e98b2e62cd64fb141e370f720709f/src/caffe/util/math_functions.cpp
 template <typename Dtype>
-void caffe_cpu_prune(const int n, const Dtype coeff, Dtype* x,
-                            Dtype* mask) {
-  // Partial sort to find the %coeff lowest absolute values of x
-  std::vector<std::pair<Dtype, int> > indexed_x;
-  for (int k = 0; k < n; ++k) {
-    indexed_x.push_back(std::make_pair(std::abs(x[k]), k));
-  }
-  std::partial_sort(
-          indexed_x.begin(), indexed_x.begin() + std::floor(coeff*n),
-          indexed_x.end(), std::less<std::pair<Dtype, int> >());
-  for (int k = 0; k < std::floor(coeff * n); k++) {
-    x[indexed_x[k].second] = 0;
-    mask[indexed_x[k].second] = 0;
-  }
-}
-
-template 
-void caffe_cpu_prune<double>(const int n, const double coeff, double* x,
-                           double* mask);
-
-template 
-void caffe_cpu_prune<float>(const int n, const float coeff, float* x,
-                           float* mask);
-
-template <typename Dtype>
-void caffe_cpu_fill_mask(const int n, const Dtype* x, Dtype *mask) {
+void caffe_cpu_fill_prune_mask(const int n, const Dtype* x, Dtype *mask) {
 	for (int i = 0; i < n; ++i) {
 		if (x[i]==0) {
 			mask[i] = Dtype(0);
@@ -409,10 +397,26 @@ void caffe_cpu_fill_mask(const int n, const Dtype* x, Dtype *mask) {
 }
 
 template 
-void caffe_cpu_fill_mask<float>(const int n, const float* x, float *mask);
+void caffe_cpu_fill_prune_mask<float>(const int n, const float* x, float *mask);
 
 template 
-void caffe_cpu_fill_mask<double>(const int n, const double* x, double *mask);
+void caffe_cpu_fill_prune_mask<double>(const int n, const double* x, double *mask);
+
+template <typename Dtype>
+void caffe_cpu_fill_prune_mask(const int n, const Dtype* x, unsigned int *mask) {
+    for (int i = 0; i < n; ++i) {
+        if (x[i]==0) {
+            mask[i] = 0;
+        }
+    }
+}
+
+template
+void caffe_cpu_fill_prune_mask<float>(const int n, const float* x, unsigned int *mask);
+
+template
+void caffe_cpu_fill_prune_mask<double>(const int n, const double* x, unsigned int *mask);
+
 
 template <typename Dtype>
 int caffe_cpu_zero_count(const int n, const Dtype* x) {
@@ -430,4 +434,69 @@ int caffe_cpu_zero_count<float>(const int n, const float* x);
 
 template 
 int caffe_cpu_zero_count<double>(const int n, const double* x);
-}  // namespace caffe
+
+template <typename Dtype>
+void caffe_cpu_fill_cluster_mask(int n, const Dtype* x, Dtype* mask) {
+    std::set<Dtype> xset(x, x+n);
+    //std::cout << "\nUnique values in original model : " << xset.size() << std::endl;
+    std::map<Dtype, Dtype> xset_to_idx; 
+    int idx = 0;
+    // Set zero parameter value to zero index 
+    xset_to_idx.insert(std::make_pair(Dtype(idx), Dtype(idx)));
+    idx++;
+    // Assign unique id to each unique parameter
+    for (typename std::set<Dtype>::iterator i=xset.begin(); i != xset.end(); ++i) {
+        if (xset_to_idx.insert(std::make_pair(*i, Dtype(idx))).second) {
+            idx++;
+        }   
+    }
+    //std::cout << "Last updated value of idx : " << idx<< std::endl;
+    //std::cout << "Number of centroids : " << xset_to_idx.size()<< std::endl;
+    //std::cout << "Index of zero value : " << xset_to_idx[Dtype(0)]<< std::endl;
+    // Fill mask
+    for (int i=0; i < n; ++i) {
+        mask[i] = xset_to_idx[x[i]];
+    } 
+    //std::set<Dtype> mask_set(mask, mask+n);
+    //std::cout << "Number of unique values in mask : " << mask_set.size()<< std::endl;
+}
+
+template
+void caffe_cpu_fill_cluster_mask<float>(int n, const float* x, float* mask);
+
+template
+void caffe_cpu_fill_cluster_mask<double>(int n, const double* x, double* mask); 
+
+template <typename Dtype>
+void caffe_cpu_cluster_gradients(int n, const Dtype* x, const Dtype* mask, Dtype* y) {
+    std::map<Dtype, Dtype> gradients_mask;
+    for (int i=0; i < n; ++i) {
+        gradients_mask.insert(std::make_pair(mask[i], Dtype(0)));
+    }
+    for (int i=0; i < n; ++i) {
+        gradients_mask[mask[i]] += x[i] * bool(mask[i]);
+    }
+    for (int i=0; i < n; ++i) {
+        y[i] = gradients_mask[mask[i]];
+    }
+    
+}
+
+template 
+void caffe_cpu_cluster_gradients<float>(int n, const float* x, const float* mask, float* y);
+
+template
+void caffe_cpu_cluster_gradients<double>(int n, const double* x, const double* mask, double* y);
+
+template<typename Dtype>
+int caffe_cpu_unique_count(int n, const Dtype* x) {
+    std::set<Dtype> xset(x, x+n);
+    return xset.size();
+}
+
+template
+int caffe_cpu_unique_count<float>(int n, const float* x);
+
+template
+int caffe_cpu_unique_count<double>(int n, const double* x);
+} // namespacHie caffe

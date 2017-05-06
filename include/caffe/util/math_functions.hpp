@@ -62,6 +62,9 @@ template <typename Dtype>
 void caffe_mul(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 
 template <typename Dtype>
+void caffe_mul(const int N, const Dtype* a, const unsigned int* b, Dtype* y);
+
+template <typename Dtype>
 void caffe_div(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 
 template <typename Dtype>
@@ -105,17 +108,24 @@ Dtype caffe_cpu_strided_dot(const int n, const Dtype* x, const int incx,
 template <typename Dtype>
 Dtype caffe_cpu_asum(const int n, const Dtype* x);
 
-// Taken from https://github.com/Caenorst/caffe/tree/ac154d322c4e98b2e62cd64fb141e370f720709f
-// Prune a blob with a mask according to the coeff% lowest absolute values of x.
-template <typename Dtype>
-void caffe_cpu_prune(const int n, const Dtype coeff, Dtype* x, Dtype *mask);
-
 // Fill mask for already pruned network (for example, class blind pruning is done outside)
 template <typename Dtype>
-void caffe_cpu_fill_mask(const int n, const Dtype* x, Dtype *mask);
+void caffe_cpu_fill_prune_mask(const int n, const Dtype* x, Dtype *mask);
+
+template <typename Dtype>
+void caffe_cpu_fill_prune_mask(const int n, const Dtype* x, unsigned int *mask);
 
 template <typename Dtype>
 int caffe_cpu_zero_count(const int n, const Dtype* x);
+
+template <typename Dtype>
+void caffe_cpu_fill_cluster_mask(int n, const Dtype* x, Dtype* mask);
+
+template <typename Dtype>
+void caffe_cpu_cluster_gradients(int n, const Dtype* x, const Dtype* mask, Dtype* y);
+
+template <typename Dtype>
+int caffe_cpu_unique_count(int n, const Dtype* x);
 
 // the branchless, type-safe version from
 // http://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
