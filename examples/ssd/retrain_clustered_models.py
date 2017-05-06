@@ -5,9 +5,9 @@ import subprocess
 caffe_root = '/home/karthik/workspace/caffe'
 
 # SSD VGGNet PASCAL LAYER INDEPENDENT
-#pruned_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Independent_Pruning')
-#retraining_script = 'examples/ssd/retrain_pruned_ssd_pascal_vggnet.py'
-#prune_type = 'layer_indep'
+clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Clustering_Layer_Independent_Pruned_Models')
+retraining_script = 'examples/ssd/retrain_clustered_ssd_pascal_vggnet.py'
+prune_type = 'layer_indep'
 
 # SSD VGGNet PASCAL LAYER WISE
 #pruned_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Wise_Pruning')
@@ -25,15 +25,10 @@ caffe_root = '/home/karthik/workspace/caffe'
 #retraining_script = 'examples/ssd/retrain_pruned_ssd_pascal_resnet.py'
 #prune_type = 'layer_indep'
 
-# SSD ResNet PASCAL LAYER INDEPENDENT
-pruned_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Wise_Pruning')
-retraining_script = 'examples/ssd/retrain_pruned_ssd_pascal_resnet.py'
-prune_type = 'layer_wise'
+clustered_models = os.listdir(clustered_models_path)
+clustered_models.sort()
 
-pruned_models = os.listdir(pruned_models_path)
-pruned_models.sort()
-
-for model in pruned_models:
+for model in clustered_models:
     if '.caffemodel' in model:
         if prune_type == 'layer_indep':
             key_str = '_pruned'
@@ -45,11 +40,11 @@ for model in pruned_models:
             std_dev = model[base_idx-3:base_idx]
             prune_percent = model[base_idx+len(key_str):base_idx+len(key_str)+2] 
         
-        pruned_model = os.path.join(pruned_models_path, model)
-        # Run score script
+        clustered_model = os.path.join(clustered_models_path, model)
+        # Run retraining script
         if prune_type == 'layer_indep':
-            cmd = 'python {} {} {} {}'.format(retraining_script, 'layer_indep', prune_percent, pruned_model)
+            cmd = 'python {} {} {} {}'.format(retraining_script, 'layer_indep', prune_percent, clustered_model)
         else:
-            cmd = 'python {} {} {} {} {}'.format(retraining_script, 'layer_wise', prune_percent, std_dev, pruned_model)
+            cmd = 'python {} {} {} {} {}'.format(retraining_script, 'layer_wise', prune_percent, std_dev, clustered_model)
         subprocess.call(cmd, shell=True)
 
