@@ -58,6 +58,19 @@ def _Net_params(self):
                                         if len(lr.blobs) > 0])
     return self._params_dict
 
+@property
+def _Net_masks(self):
+    """
+    An OrderedDict (bottom to top, i.e., input to output) of network
+    masks indexed by name; each is a list of multiple blobs (e.g.,
+    weight mask and bias mask)
+    """
+    if not hasattr(self, '_masks_dict'):
+        self._masks_dict = OrderedDict([(name, lr.masks)
+                                       for name, lr in zip(
+                                            self._layer_names, self.layers)
+                                       if len(lr.masks) > 0])
+    return self._masks_dict
 
 @property
 def _Net_inputs(self):
@@ -322,6 +335,7 @@ def _Net_get_id_name(func, field):
 Net.blobs = _Net_blobs
 Net.blob_loss_weights = _Net_blob_loss_weights
 Net.params = _Net_params
+Net.masks = _Net_masks
 Net.forward = _Net_forward
 Net.backward = _Net_backward
 Net.forward_all = _Net_forward_all

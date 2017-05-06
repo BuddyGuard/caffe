@@ -357,6 +357,8 @@ BOOST_PYTHON_MODULE(_caffe) {
     boost::noncopyable>("Layer", bp::init<const LayerParameter&>())
     .add_property("blobs", bp::make_function(&Layer<Dtype>::blobs,
           bp::return_internal_reference<>()))
+    .add_property("masks", bp::make_function(&Layer<Dtype>::masks,
+          bp::return_internal_reference<>()))
     .def("setup", &Layer<Dtype>::LayerSetUp)
     .def("reshape", &Layer<Dtype>::Reshape)
     .add_property("type", bp::make_function(&Layer<Dtype>::type));

@@ -28,17 +28,23 @@ def UnpackVariable(var, num):
     return ret
 
 def ConvBNLayer(net, from_layer, out_layer, use_bn, use_relu, num_output,
-    kernel_size, pad, stride, dilation=1, use_scale=True, prune_mask=False, eps=0.001,
+    kernel_size, pad, stride, dilation=1, use_scale=True, prune_mask=False, cluster_mask=False, eps=0.001,
     conv_prefix='', conv_postfix='', bn_prefix='', bn_postfix='_bn',
     scale_prefix='', scale_postfix='_scale', bias_prefix='', bias_postfix='_bias'):
   if use_bn:
     # parameters for convolution layer with batchnorm.
     if prune_mask:
       kwargs = {'param': [dict(lr_mult=1, decay_mult=1)],
-                'pruning_param': dict(coeff=0, retrain=True),
+                'pruning_param': dict(fill_prune_mask=True),
                 'weight_filler': dict(type='gaussian', std=0.01),
-        	'bias_term': False,
-		}
+                'bias_term': False,
+        }
+    elif cluster_mask:
+      kwargs = {'param': [dict(lr_mult=1, decay_mult=1)],
+                'clustering_param': dict(fill_cluster_mask=True),
+                'weight_filler': dict(type='gaussian', std=0.01),
+                'bias_term': False,
+        }
     else:
       kwargs = {
          'param': [dict(lr_mult=1, decay_mult=1)],
@@ -64,18 +70,24 @@ def ConvBNLayer(net, from_layer, out_layer, use_bn, use_relu, num_output,
           'filler': dict(type='constant', value=0.0),
           }
   else:
-  	if prune_mask:
-  		kwargs = {
-            	'param': [dict(lr_mult=1, decay_mult=1), dict(lr_mult=2, decay_mult=0)],
-            	'pruning_param': dict(coeff=0, retrain=True),
-            	'weight_filler': dict(type='xavier'),
-            	'bias_filler': dict(type='constant', value=0)}
-  	else:
-  		kwargs = {
-        	'param': [dict(lr_mult=1, decay_mult=1), dict(lr_mult=2, decay_mult=0)],
-        	'weight_filler': dict(type='xavier'),
-        	'bias_filler': dict(type='constant', value=0)
-        	}
+    if prune_mask:
+        kwargs = {
+                'param': [dict(lr_mult=1, decay_mult=1), dict(lr_mult=2, decay_mult=0)],
+                'pruning_param': dict(fill_prune_mask=True),
+                'weight_filler': dict(type='xavier'),
+                'bias_filler': dict(type='constant', value=0)}
+    elif cluster_mask:
+        kwargs = {
+                'param': [dict(lr_mult=1, decay_mult=1), dict(lr_mult=2, decay_mult=0)],
+                'clustering_param': dict(fill_cluster_mask=True),
+                'weight_filler': dict(type='xavier'),
+                'bias_filler': dict(type='constant', value=0)}
+    else:
+        kwargs = {
+            'param': [dict(lr_mult=1, decay_mult=1), dict(lr_mult=2, decay_mult=0)],
+            'weight_filler': dict(type='xavier'),
+            'bias_filler': dict(type='constant', value=0)
+            }
 
   conv_name = '{}{}{}'.format(conv_prefix, out_layer, conv_postfix)
   [kernel_h, kernel_w] = UnpackVariable(kernel_size, 2)
@@ -206,19 +218,25 @@ def CreateAnnotatedDataLayer(source, batch_size=32, backend=P.Data.LMDB,
 
 
 def VGGNetBody(net, from_layer, need_fc=True, fully_conv=False, reduced=False,
-        dilated=False, nopool=False, dropout=True, prune_mask=False, freeze_layers=[]):
+        dilated=False, nopool=False, dropout=True, prune_mask=False, cluster_mask=False, freeze_layers=[]):
     
     if prune_mask:
-    	kwargs = {
-            	'param': [dict(lr_mult=1, decay_mult=1), dict(lr_mult=2, decay_mult=0)],
-            	'pruning_param': dict(coeff=0, retrain=True),
-            	'weight_filler': dict(type='xavier'),
-            	'bias_filler': dict(type='constant', value=0)}
+        kwargs = {
+                'param': [dict(lr_mult=1, decay_mult=1), dict(lr_mult=2, decay_mult=0)],
+                'pruning_param': dict(fill_prune_mask=True),
+                'weight_filler': dict(type='xavier'),
+                'bias_filler': dict(type='constant', value=0)}
+    elif cluster_mask:
+        kwargs = {
+                'param': [dict(lr_mult=1, decay_mult=1), dict(lr_mult=2, decay_mult=0)],
+                'clustering_param': dict(fill_cluster_mask=True),
+                'weight_filler': dict(type='xavier'),
+                'bias_filler': dict(type='constant', value=0)}
     else:
-    	kwargs = {
-            	'param': [dict(lr_mult=1, decay_mult=1), dict(lr_mult=2, decay_mult=0)],
-            	'weight_filler': dict(type='xavier'),
-            	'bias_filler': dict(type='constant', value=0)}
+        kwargs = {
+                'param': [dict(lr_mult=1, decay_mult=1), dict(lr_mult=2, decay_mult=0)],
+                'weight_filler': dict(type='xavier'),
+                'bias_filler': dict(type='constant', value=0)}
 
     assert from_layer in net.keys()
     net.conv1_1 = L.Convolution(net[from_layer], num_output=64, pad=1, kernel_size=3, **kwargs)
@@ -677,7 +695,7 @@ def InceptionV3Body(net, from_layer, output_pred=False):
   return net
 
 def CreateMultiBoxHead(net, data_layer="data", num_classes=[], from_layers=[],
-        use_objectness=False, normalizations=[], use_batchnorm=True, prune_mask=False,
+        use_objectness=False, normalizations=[], use_batchnorm=True, prune_mask=False, cluster_mask=False,
         min_sizes=[], max_sizes=[], prior_variance = [0.1],
         aspect_ratios=[], share_location=True, flip=True, clip=True,
         inter_layer_depth=0, kernel_size=1, pad=0, conf_postfix='', loc_postfix=''):
@@ -733,8 +751,8 @@ def CreateMultiBoxHead(net, data_layer="data", num_classes=[], from_layers=[],
         if not share_location:
             num_loc_output *= num_classes
         ConvBNLayer(net, from_layer, name, use_bn=use_batchnorm, use_relu=False, 
-        			prune_mask=prune_mask, num_output=num_loc_output, 
-        			kernel_size=kernel_size, pad=pad, stride=1)
+                    prune_mask=prune_mask, cluster_mask=cluster_mask, num_output=num_loc_output, 
+                    kernel_size=kernel_size, pad=pad, stride=1)
         permute_name = "{}_perm".format(name)
         net[permute_name] = L.Permute(net[name], order=[0, 2, 3, 1])
         flatten_name = "{}_flat".format(name)
@@ -745,7 +763,7 @@ def CreateMultiBoxHead(net, data_layer="data", num_classes=[], from_layers=[],
         name = "{}_mbox_conf{}".format(from_layer, conf_postfix)
         num_conf_output = num_priors_per_location * num_classes;
         ConvBNLayer(net, from_layer, name, use_bn=use_batchnorm, use_relu=False,
-            prune_mask=prune_mask, num_output=num_conf_output, 
+            prune_mask=prune_mask, cluster_mask=cluster_mask, num_output=num_conf_output, 
             kernel_size=kernel_size, pad=pad, stride=1)
         permute_name = "{}_perm".format(name)
         net[permute_name] = L.Permute(net[name], order=[0, 2, 3, 1])
