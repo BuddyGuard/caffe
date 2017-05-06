@@ -24,27 +24,21 @@ void ConvolutionLayer<Dtype>::compute_output_shape() {
 template <typename Dtype>
 void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
-  const Dtype* weight = this->blobs_[0]->cpu_data();
-  // prune only once after loading the caffemodel
-  if (!this->pruned_) {
-    caffe_cpu_prune(this->blobs_[0]->count(), this->pruning_coeff_,
-          this->blobs_[0]->mutable_cpu_data(), this->masks_[0]->mutable_cpu_data());
-    if (this->bias_term_ && this->prune_bias_) {
-      caffe_cpu_prune(this->blobs_[1]->count(), this->pruning_coeff_,
-          this->blobs_[1]->mutable_cpu_data(), this->masks_[1]->mutable_cpu_data());
-    }
-    this->pruned_ = true;
-  } 
+  const Dtype* weight = this->blobs_[0]->cpu_data(); 
   // fill masks for already pruned caffemodel
-  if(!this->masks_filled_) {
-  	 caffe_cpu_fill_mask(this->blobs_[0]->count(), this->blobs_[0]->cpu_data(), 
-  	      this->masks_[0]->mutable_cpu_data());
+  if(this->fill_prune_mask_ && !this->filled_prune_mask_) {
+  	 caffe_cpu_fill_prune_mask(this->blobs_[0]->count(), this->blobs_[0]->cpu_data(), 
+  	        this->masks_[0]->mutable_cpu_data());
      if (this->bias_term_ && this->prune_bias_) {
-        caffe_cpu_fill_mask(this->blobs_[1]->count(), this->blobs_[1]->cpu_data(), 
-          this->masks_[1]->mutable_cpu_data());
+        caffe_cpu_fill_prune_mask(this->blobs_[1]->count(), this->blobs_[1]->cpu_data(), 
+            this->masks_[1]->mutable_cpu_data());
      }
-     this->pruned_ = true;
-     this->masks_filled_ = true;
+     this->filled_prune_mask_ = true;
+  }
+  if (this->fill_cluster_mask_ && !this->filled_cluster_mask_) {
+    caffe_cpu_fill_cluster_mask(this->blobs_[0]->count(), this->blobs_[0]->cpu_data(),
+            this->masks_[0]->mutable_cpu_data());
+    this->filled_cluster_mask_ = true;  
   }
   for (int i = 0; i < bottom.size(); ++i) {
     const Dtype* bottom_data = bottom[i]->cpu_data();
@@ -91,7 +85,7 @@ void ConvolutionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
       }
     }
   }
-  if (this->pruning_coeff_ > 0 || this->retrain_) {
+  if (this->train_pruned_layer_) {
     if (this->param_propagate_down_[0]) {
       caffe_mul(this->blobs_[0]->count(), this->blobs_[0]->cpu_diff(),
           this->masks_[0]->cpu_data(), this->blobs_[0]->mutable_cpu_diff());
@@ -99,6 +93,13 @@ void ConvolutionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     if (this->bias_term_ && this->prune_bias_ && this->param_propagate_down_[1]) {
       caffe_mul(this->blobs_[1]->count(), this->blobs_[1]->cpu_diff(),
           this->masks_[1]->cpu_data(), this->blobs_[1]->mutable_cpu_diff());
+    }
+  }
+  if (this->train_clustered_layer_) {
+    LOG(INFO) << "Clustering gradients";
+    if (this->param_propagate_down_[0]) {
+      caffe_cpu_cluster_gradients(this->blobs_[0]->count(), this->blobs_[0]->cpu_diff(),
+            this->masks_[0]->cpu_data(), this->blobs_[0]->mutable_cpu_diff());
     }
   }
 }
