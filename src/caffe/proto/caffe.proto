@@ -450,7 +450,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 150 (last added: pruning_param)
+// LayerParameter next available layer-specific ID: 151 (last added: clustering_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -510,6 +510,7 @@ message LayerParameter {
   optional ConcatParameter concat_param = 104;
   optional ContrastiveLossParameter contrastive_loss_param = 105;
   optional ConvolutionParameter convolution_param = 106;
+  optional ClusteringParameter clustering_param = 150;
   optional CropParameter crop_param = 144;
   optional DataParameter data_param = 107;
   optional DetectionEvaluateParameter detection_evaluate_param = 205;
@@ -793,6 +794,12 @@ message BiasParameter {
   // Default is the zero (0) initialization, resulting in the BiasLayer
   // initially performing the identity operation.
   optional FillerParameter filler = 3;
+}
+
+message ClusteringParameter {
+  // Count unique items and fills mask with centroid indices
+  optional bool fill_cluster_mask = 1 [default = false];
+  optional bool cluster_bias = 3 [default = false];
 }
 
 message ContrastiveLossParameter {
@@ -1344,10 +1351,8 @@ message PriorBoxParameter {
 }
 
 message PruningParameter {
-  // Pruning coefficient for deep compression
-  optional float coeff = 1 [default = 0];
-  // Already pruned
-  optional bool retrain = 2 [default = false];
+  // Fill masks for pruned net
+  optional bool fill_prune_mask = 1 [default = false];
   // Prune bias
   optional bool prune_bias = 3 [default = false];
 }
