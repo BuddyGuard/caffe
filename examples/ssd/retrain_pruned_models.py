@@ -14,11 +14,10 @@ caffe_root = '/home/karthik/workspace/caffe'
 #retraining_script = 'examples/ssd/retrain_pruned_ssd_pascal_vggnet.py'
 #prune_type = 'layer_wise'
 
-# SSD VGGNet COCO LAYER WISE
-#pruned_models_path = os.path.join(caffe_root, 'models/VGGNet/coco/Layer_Wise_Pruning')
-#original_model_name = os.path.join(caffe_root, 'models/VGGNet/coco/SSD_300x300/VGG_coco_SSD_300x300_iter_400000.caffemodel')
-#scoring_script = 'examples/ssd/score_ssd_coco_vggnet.py'
-#gammas = np.arange(0.1, 2.1, 0.1)
+# SSD VGGNet COCO LAYER INDEPENDENT
+pruned_models_path = os.path.join(caffe_root, 'models/VGGNet/coco/Layer_Independent_Pruning')
+retraining_script = 'examples/ssd/retrain_pruned_ssd_coco_vggnet.py'
+prune_type = 'layer_indep'
 
 # SSD ResNet PASCAL LAYER INDEPENDENT
 #pruned_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Independent_Pruning')
@@ -26,9 +25,9 @@ caffe_root = '/home/karthik/workspace/caffe'
 #prune_type = 'layer_indep'
 
 # SSD ResNet PASCAL LAYER INDEPENDENT
-pruned_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Wise_Pruning')
-retraining_script = 'examples/ssd/retrain_pruned_ssd_pascal_resnet.py'
-prune_type = 'layer_wise'
+#pruned_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Wise_Pruning')
+#retraining_script = 'examples/ssd/retrain_pruned_ssd_pascal_resnet.py'
+#prune_type = 'layer_wise'
 
 pruned_models = os.listdir(pruned_models_path)
 pruned_models.sort()
