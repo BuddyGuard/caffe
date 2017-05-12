@@ -178,6 +178,16 @@ class Net {
   inline const vector<Blob<Dtype>*>& learnable_params() const {
     return learnable_params_;
   }
+  /// @brief returns the masks
+  inline const vector<shared_ptr<Blob<Dtype> > >& masks() const {
+    return masks_;
+  }
+  inline const vector<int> mask_param_ids() const {   
+	return mask_param_ids_;
+  }
+  inline const vector<string> masks_display_names() const {   
+	return masks_display_names_;
+  }
   /// @brief returns the learnable parameter learning rate multipliers
   inline const vector<float>& params_lr() const { return params_lr_; }
   inline const vector<bool>& has_params_lr() const { return has_params_lr_; }
@@ -288,6 +298,10 @@ class Net {
   /// The parameters in the network.
   vector<shared_ptr<Blob<Dtype> > > params_;
   vector<Blob<Dtype>*> learnable_params_;
+  /// Cluster masks for clustering gradients
+  vector<string> masks_display_names_;
+  vector<shared_ptr<Blob<Dtype> > > masks_;
+  vector<int> mask_param_ids_;
   /**
    * The mapping from params_ -> learnable_params_: we have
    * learnable_param_ids_.size() == params_.size(),

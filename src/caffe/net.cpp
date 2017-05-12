@@ -449,6 +449,7 @@ template <typename Dtype>
 void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
                              const int param_id) {
   const LayerParameter& layer_param = layers_[layer_id]->layer_param();
+  const bool fill_cluster_mask = layer_param.clustering_param().fill_cluster_mask();
   const int param_size = layer_param.param_size();
   string param_name =
       (param_size > param_id) ? layer_param.param(param_id).name() : "";
@@ -461,6 +462,11 @@ void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
   }
   const int net_param_id = params_.size();
   params_.push_back(layers_[layer_id]->blobs()[param_id]);
+  if (fill_cluster_mask && param_id==0){
+	masks_display_names_.push_back(layer_param.name());
+  	masks_.push_back(layers_[layer_id]->masks()[0]);
+    mask_param_ids_.push_back(net_param_id);
+  }
   param_id_vecs_[layer_id].push_back(net_param_id);
   param_layer_indices_.push_back(make_pair(layer_id, param_id));
   ParamSpec default_param_spec;
