@@ -256,6 +256,30 @@ void caffe_gpu_mul<double>(const int N, const double* a,
 }
 
 template <typename Dtype>
+__global__ void bool_mul_kernel(const int n, const Dtype* a,
+    const Dtype* b, Dtype* y) {
+  CUDA_KERNEL_LOOP(index, n) {
+    y[index] = a[index] * bool(b[index]);
+  }
+}
+
+template <>
+void caffe_gpu_bool_mul<float>(const int N, const float* a,
+    const float* b, float* y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  bool_mul_kernel<float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, a, b, y);
+}
+
+template <>
+void caffe_gpu_bool_mul<double>(const int N, const double* a,
+    const double* b, double* y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  bool_mul_kernel<double><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, a, b, y);
+}
+
+template <typename Dtype>
 __global__ void div_kernel(const int n, const Dtype* a,
     const Dtype* b, Dtype* y) {
   CUDA_KERNEL_LOOP(index, n) {
