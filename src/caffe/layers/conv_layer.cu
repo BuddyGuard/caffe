@@ -8,7 +8,7 @@ template <typename Dtype>
 void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   // Fill Prune mask
-  if(this->fill_prune_mask_ && !this->filled_prune_mask_) {
+  if(this->train_pruned_layer_ && !this->filled_prune_mask_) {
   	 caffe_cpu_fill_prune_mask(this->blobs_[0]->count(), this->blobs_[0]->cpu_data(), 
   	        this->masks_[0]->mutable_cpu_data());
      if (this->bias_term_ && this->prune_bias_) {
@@ -18,13 +18,17 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
      this->filled_prune_mask_ = true;
   }
   // Fill Cluster mask
-  if (this->fill_cluster_mask_ && !this->filled_cluster_mask_) {
+  if (this->train_clustered_layer_ && !this->filled_cluster_mask_) {
     caffe_cpu_fill_cluster_mask(this->blobs_[0]->count(), this->blobs_[0]->cpu_data(),
             this->masks_[0]->mutable_cpu_data());
     this->filled_cluster_mask_ = true;
-    std::cout << "Clustering " << this->masks_[0]->shape_string() << " : " 
-              << caffe_cpu_unique_count(this->masks_[0]->count(), this->masks_[0]->cpu_data()) << " centroids" << std::endl;
+    LOG(INFO) << "Clustering " << this->masks_[0]->shape_string() << " : " 
+              << caffe_cpu_unique_count(this->masks_[0]->count(), this->masks_[0]->cpu_data()) << " centroids";
   }
+  //if (this->filled_cluster_mask_) {
+  //	LOG(INFO) << this->blobs_[0]->shape_string() << " : " << 
+  //		caffe_cpu_unique_count(this->blobs_[0]->count(), this->blobs_[0]->cpu_data()) << " unique values";
+  //}
   const Dtype* weight = this->blobs_[0]->gpu_data();
   for (int i = 0; i < bottom.size(); ++i) {
     const Dtype* bottom_data = bottom[i]->gpu_data();
@@ -81,12 +85,16 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
           this->masks_[1]->gpu_data(), this->blobs_[1]->mutable_gpu_diff());
     }
   }
-  if (this->train_clustered_layer_) {
+  /*if (this->train_clustered_layer_) {
     if (this->param_propagate_down_[0]) {
-      caffe_cpu_cluster_gradients(this->blobs_[0]->count(), this->blobs_[0]->cpu_diff(), 
-            this->masks_[0]->cpu_data(), this->blobs_[0]->mutable_cpu_diff());
+      //caffe_cpu_cluster_gradients(this->blobs_[0]->count(), this->blobs_[0]->cpu_diff(), 
+      //      this->masks_[0]->cpu_data(), this->blobs_[0]->mutable_cpu_diff());
+	  caffe_gpu_bool_mul(this->blobs_[0]->count(), this->blobs_[0]->gpu_diff(),
+          this->masks_[0]->gpu_data(), this->blobs_[0]->mutable_gpu_diff());
+      //std::cout << "Gradient Clustering " << this->blobs_[0]->shape_string() << " : "
+      //              << caffe_cpu_unique_count(this->blobs_[0]->count(), this->blobs_[0]->cpu_diff()) << " centroids" << std::endl;
     }
-  }
+  }*/
 }
 
 INSTANTIATE_LAYER_GPU_FUNCS(ConvolutionLayer);
