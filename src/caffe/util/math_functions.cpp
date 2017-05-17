@@ -67,6 +67,7 @@ void caffe_set(const int N, const Dtype alpha, Dtype* Y) {
 }
 
 template void caffe_set<int>(const int N, const int alpha, int* Y);
+template void caffe_set<unsigned int>(const int N, const unsigned int alpha, unsigned int* Y);
 template void caffe_set<float>(const int N, const float alpha, float* Y);
 template void caffe_set<double>(const int N, const double alpha, double* Y);
 
@@ -388,35 +389,19 @@ void caffe_cpu_scale<double>(const int n, const double alpha, const double *x,
 }
 
 template <typename Dtype>
-void caffe_cpu_fill_prune_mask(const int n, const Dtype* x, Dtype *mask) {
+void caffe_cpu_fill_prune_mask(const int n, const Dtype* x, unsigned int* mask) {
 	for (int i = 0; i < n; ++i) {
 		if (x[i]==0) {
-			mask[i] = Dtype(0);
+			mask[i] = 0;
 		}
 	}
 }
 
 template 
-void caffe_cpu_fill_prune_mask<float>(const int n, const float* x, float *mask);
+void caffe_cpu_fill_prune_mask<float>(const int n, const float* x, unsigned int* mask);
 
 template 
-void caffe_cpu_fill_prune_mask<double>(const int n, const double* x, double *mask);
-
-template <typename Dtype>
-void caffe_cpu_fill_prune_mask(const int n, const Dtype* x, unsigned int *mask) {
-    for (int i = 0; i < n; ++i) {
-        if (x[i]==0) {
-            mask[i] = 0;
-        }
-    }
-}
-
-template
-void caffe_cpu_fill_prune_mask<float>(const int n, const float* x, unsigned int *mask);
-
-template
-void caffe_cpu_fill_prune_mask<double>(const int n, const double* x, unsigned int *mask);
-
+void caffe_cpu_fill_prune_mask<double>(const int n, const double* x, unsigned int* mask);
 
 template <typename Dtype>
 int caffe_cpu_zero_count(const int n, const Dtype* x) {
@@ -436,13 +421,13 @@ template
 int caffe_cpu_zero_count<double>(const int n, const double* x);
 
 template <typename Dtype>
-void caffe_cpu_fill_cluster_mask(int n, const Dtype* x, Dtype* mask) {
+void caffe_cpu_fill_cluster_mask(int n, const Dtype* x, unsigned int* mask) {
     std::set<Dtype> xset(x, x+n);
     //std::cout << "\nUnique values in original model : " << xset.size() << std::endl;
-    std::map<Dtype, Dtype> xset_to_idx; 
-    int idx = 0;
+    std::map<Dtype, unsigned int> xset_to_idx; 
+    unsigned int idx = 0;
     // Set zero parameter value to zero index 
-    xset_to_idx.insert(std::make_pair(Dtype(idx), Dtype(idx)));
+    xset_to_idx.insert(std::make_pair(Dtype(idx), idx));
     idx++;
     // Assign unique id to each unique parameter
     for (typename std::set<Dtype>::iterator i=xset.begin(); i != xset.end(); ++i) {
@@ -462,14 +447,14 @@ void caffe_cpu_fill_cluster_mask(int n, const Dtype* x, Dtype* mask) {
 }
 
 template
-void caffe_cpu_fill_cluster_mask<float>(int n, const float* x, float* mask);
+void caffe_cpu_fill_cluster_mask<float>(int n, const float* x, unsigned int* mask);
 
 template
-void caffe_cpu_fill_cluster_mask<double>(int n, const double* x, double* mask); 
+void caffe_cpu_fill_cluster_mask<double>(int n, const double* x, unsigned int* mask); 
 
 template <typename Dtype>
-void caffe_cpu_cluster_gradients(int n, const Dtype* x, const Dtype* mask, Dtype* y) {
-    std::map<Dtype, Dtype> gradients_mask;
+void caffe_cpu_cluster_gradients(int n, const Dtype* x, const unsigned int* mask, Dtype* y) {
+    std::map<unsigned int, Dtype> gradients_mask;
     for (int i=0; i < n; ++i) {
         gradients_mask.insert(std::make_pair(mask[i], Dtype(0)));
     }
@@ -483,10 +468,10 @@ void caffe_cpu_cluster_gradients(int n, const Dtype* x, const Dtype* mask, Dtype
 }
 
 template 
-void caffe_cpu_cluster_gradients<float>(int n, const float* x, const float* mask, float* y);
+void caffe_cpu_cluster_gradients<float>(int n, const float* x, const unsigned int* mask, float* y);
 
 template
-void caffe_cpu_cluster_gradients<double>(int n, const double* x, const double* mask, double* y);
+void caffe_cpu_cluster_gradients<double>(int n, const double* x, const unsigned int* mask, double* y);
 
 template<typename Dtype>
 int caffe_cpu_unique_count(int n, const Dtype* x) {
@@ -499,4 +484,11 @@ int caffe_cpu_unique_count<float>(int n, const float* x);
 
 template
 int caffe_cpu_unique_count<double>(int n, const double* x);
+
+template<>
+int caffe_cpu_unique_count(int n, const unsigned int* x) {
+    std::set<unsigned int> xset(x, x+n);
+    return xset.size();
+}
+
 } // namespacHie caffe

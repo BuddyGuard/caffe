@@ -116,7 +116,7 @@ void SGDSolver<Dtype>::ApplyUpdate() {
   if (this->param_.cluster_gradients()) {
 	const vector<int> mask_param_ids = this->net_->mask_param_ids();
   	const vector<string> mask_display_names = this->net_->masks_display_names();
-   	const vector<shared_ptr<Blob<Dtype> > >& masks = this->net_->masks(); 
+   	const vector<shared_ptr<Blob<unsigned int> > >& masks = this->net_->masks(); 
 	const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
     for (int mask_id = 0; mask_id < masks.size(); ++mask_id) {
         int param_id = mask_param_ids[mask_id]; 	

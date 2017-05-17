@@ -34,11 +34,13 @@ void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
             this->masks_[1]->mutable_cpu_data());
      }
      this->filled_prune_mask_ = true;
+	LOG(INFO) << "Filled pruning mask";
   }
   if (this->train_clustered_layer_ && !this->filled_cluster_mask_) {
     caffe_cpu_fill_cluster_mask(this->blobs_[0]->count(), this->blobs_[0]->cpu_data(),
             this->masks_[0]->mutable_cpu_data());
-    this->filled_cluster_mask_ = true;  
+    this->filled_cluster_mask_ = true; 
+	LOG(INFO) << "Filled clustering mask"; 
   }
   for (int i = 0; i < bottom.size(); ++i) {
     const Dtype* bottom_data = bottom[i]->cpu_data();

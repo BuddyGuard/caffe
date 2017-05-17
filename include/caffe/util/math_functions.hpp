@@ -110,22 +110,22 @@ Dtype caffe_cpu_asum(const int n, const Dtype* x);
 
 // Fill mask for already pruned network (for example, class blind pruning is done outside)
 template <typename Dtype>
-void caffe_cpu_fill_prune_mask(const int n, const Dtype* x, Dtype *mask);
-
-template <typename Dtype>
-void caffe_cpu_fill_prune_mask(const int n, const Dtype* x, unsigned int *mask);
+void caffe_cpu_fill_prune_mask(const int n, const Dtype* x, unsigned int* mask);
 
 template <typename Dtype>
 int caffe_cpu_zero_count(const int n, const Dtype* x);
 
 template <typename Dtype>
-void caffe_cpu_fill_cluster_mask(int n, const Dtype* x, Dtype* mask);
+void caffe_cpu_fill_cluster_mask(int n, const Dtype* x, unsigned int* mask);
 
 template <typename Dtype>
-void caffe_cpu_cluster_gradients(int n, const Dtype* x, const Dtype* mask, Dtype* y);
+void caffe_cpu_cluster_gradients(int n, const Dtype* x, const unsigned int* mask, Dtype* y);
 
 template <typename Dtype>
 int caffe_cpu_unique_count(int n, const Dtype* x);
+
+template <typename Dtype>
+int caffe_cpu_unique_count(int n, const unsigned int* x);
 
 // the branchless, type-safe version from
 // http://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
@@ -215,6 +215,9 @@ void caffe_gpu_sub(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 
 template <typename Dtype>
 void caffe_gpu_mul(const int N, const Dtype* a, const Dtype* b, Dtype* y);
+
+template <typename Dtype>
+void caffe_gpu_mul(const int N, const Dtype* a, const unsigned int* b, Dtype* y);
 
 template <typename Dtype>
 void caffe_gpu_bool_mul(const int N, const Dtype* a, const Dtype* b, Dtype* y);

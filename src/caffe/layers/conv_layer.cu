@@ -16,6 +16,7 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
             this->masks_[1]->mutable_cpu_data());
      }
      this->filled_prune_mask_ = true;
+	 LOG(INFO) << "Filled pruning mask";
   }
   // Fill Cluster mask
   if (this->train_clustered_layer_ && !this->filled_cluster_mask_) {

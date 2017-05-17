@@ -179,7 +179,7 @@ class Net {
     return learnable_params_;
   }
   /// @brief returns the masks
-  inline const vector<shared_ptr<Blob<Dtype> > >& masks() const {
+  inline const vector<shared_ptr<Blob<unsigned int> > >& masks() const {
     return masks_;
   }
   inline const vector<int> mask_param_ids() const {   
@@ -300,7 +300,7 @@ class Net {
   vector<Blob<Dtype>*> learnable_params_;
   /// Cluster masks for clustering gradients
   vector<string> masks_display_names_;
-  vector<shared_ptr<Blob<Dtype> > > masks_;
+  vector<shared_ptr<Blob<unsigned int> > > masks_;
   vector<int> mask_param_ids_;
   /**
    * The mapping from params_ -> learnable_params_: we have

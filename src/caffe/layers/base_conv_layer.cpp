@@ -150,7 +150,6 @@ void BaseConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   train_clustered_layer_ = fill_cluster_mask;
   cluster_bias_ = this->layer_param_.clustering_param().cluster_bias();
   filled_cluster_mask_ = !fill_cluster_mask;
-  LOG(INFO) << "Fill cluster mask : " << fill_cluster_mask;
 
   vector<int> bias_shape(bias_term_, num_output_);
   if (this->blobs_.size() > 0) {
@@ -192,10 +191,10 @@ void BaseConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     weight_filler->Fill(this->blobs_[0].get());
     // Initialize weight mask
     if (train_pruned_layer_ || train_clustered_layer_) {
-      this->masks_[0].reset(new Blob<Dtype>(weight_shape));
+      this->masks_[0].reset(new Blob<unsigned int>(weight_shape));
 	  LOG(INFO) << "Initialized mask : " << this->masks_[0]->shape_string();
       if (train_pruned_layer_) {
-        caffe_set<Dtype>(this->blobs_[0]->count(), (Dtype)1.,
+        caffe_set<unsigned int>(this->blobs_[0]->count(), (unsigned int)1,
             this->masks_[0]->mutable_cpu_data());
       }
     }
@@ -208,8 +207,8 @@ void BaseConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       // Initialize bias mask
       if (train_pruned_layer_ || train_clustered_layer_) {
       	if (prune_bias_) {
-          this->masks_[1].reset(new Blob<Dtype>(bias_shape));
-          caffe_set<Dtype>(this->blobs_[1]->count(), (Dtype)1.,
+          this->masks_[1].reset(new Blob<unsigned int>(bias_shape));
+          caffe_set<unsigned int>(this->blobs_[1]->count(), (unsigned int)1,
               this->masks_[1]->mutable_cpu_data());
         }
       }
