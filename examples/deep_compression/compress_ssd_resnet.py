@@ -9,17 +9,17 @@ caffe.set_mode_cpu()
 
 caffe_root = '/home/karthik/workspace/caffe'
 
-# SSD VGGNet PASCAL LAYER INDEPENDENT - PRUNED - RETRAINED 10K - CLUSTERED MODELS
-#retrained_iter = '10000'
-#retrained_models_folders = glob.glob('models/VGGNet/VOC0712/SSD_300x300_layer_indep_*_pruned')
-#clustered_models_path = 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Models'
-#compressed_models_path = 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Compressed_Models'
+# SSD ResNet PASCAL LAYER INDEPENDENT - PRUNED - RETRAINED 15K - CLUSTERED MODELS
+#retrained_iter = '15000'
+#retrained_models_folders = glob.glob('models/ResNet/VOC0712/SSD_300x300_layer_indep_*_pruned')
+#clustered_models_path = 'models/ResNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Models'
+#compressed_models_path = 'models/ResNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Compressed_Models'
 
-# SSD VGGNet PASCAL LAYER WISE - PRUNED - RETRAINED 15K - CLUSTERED MODELS
+# SSD ResNet PASCAL LAYER WISE - PRUNED - RETRAINED 15K - CLUSTERED MODELS
 retrained_iter = '15000'
-retrained_models_folders = glob.glob('models/VGGNet/VOC0712/SSD_300x300_layer_wise_*_pruned') 
-clustered_models_path = 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Models'
-compressed_models_path = 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Compressed_Models'
+retrained_models_folders = glob.glob('models/ResNet/VOC0712/SSD_300x300_layer_wise_*_pruned')
+clustered_models_path = 'models/ResNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Models'
+compressed_models_path = 'models/ResNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Compressed_Models'
 
 codebook_size = 2**8
 ind_bits_size = 2**4
@@ -120,14 +120,16 @@ for model in clustered_models:
                 for pos, val in enumerate(val_stream):
                     spm_stream[pos] = codebook[val]
                 codebook_vals = np.array(codebook.keys(), dtype=np.float32)
-                print 'Compressing {} : codebook={}, spm_stream={}, ind_stream={}'.format(name, codebook_vals.size,
-                                                                                          spm_stream.size, ind_stream.size)
+                print 'Compressing {} : codebook={}, spm_stream={}, ind_stream={}'.format(name, codebook_vals.size, spm_stream.size,
+                                                                                          ind_stream.size)
                 codebook_vals.tofile(fout)
                 spm_stream.tofile(fout)
                 ind_stream.tofile(fout)
             else:
-                print 'Compressing {} : bias={}'.format(name, p.data.size)
-                bias = p.data.flatten().astype(np.float32)
-                bias.tofile(fout)
+                print 'Compressing {} : shape={}'.format(name, p.data.shape)
+                # Write BN Mean, BN Variance, BN eps, Scale Multiplier, Scale Bias, Conv Bias
+                params = p.data.flatten().astype(np.float32)
+                params.tofile(fout)
+                 
     fout.close()
     print 'Saved compressed model at : {}'.format(compressed_model)
