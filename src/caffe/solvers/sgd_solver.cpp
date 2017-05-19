@@ -98,6 +98,7 @@ void SGDSolver<Dtype>::ClipGradients() {
   }
 }
 
+
 template <typename Dtype>
 void SGDSolver<Dtype>::ApplyUpdate() {
   CHECK(Caffe::root_solver());
@@ -111,6 +112,20 @@ void SGDSolver<Dtype>::ApplyUpdate() {
     Normalize(param_id);
     Regularize(param_id);
     ComputeUpdateValue(param_id, rate);
+  }
+  if (this->param_.cluster_gradients()) {
+	const vector<int> mask_param_ids = this->net_->mask_param_ids();
+  	const vector<string> mask_display_names = this->net_->masks_display_names();
+   	const vector<shared_ptr<Blob<unsigned int> > >& masks = this->net_->masks(); 
+	const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+    for (int mask_id = 0; mask_id < masks.size(); ++mask_id) {
+        int param_id = mask_param_ids[mask_id]; 	
+		caffe_cpu_cluster_gradients(net_params[param_id]->count(), net_params[param_id]->cpu_diff(),
+	         		masks[mask_id]->cpu_data(), net_params[param_id]->mutable_cpu_diff());
+		//LOG(INFO) << mask_display_names[mask_id] << " : " << net_params[param_id]->shape_string() <<
+		//		" : " << "gradient has " << caffe_cpu_unique_count(net_params[param_id]->count(), net_params[param_id]->cpu_diff()) <<
+		//		" centroids";
+	}
   }
   this->net_->Update();
 }

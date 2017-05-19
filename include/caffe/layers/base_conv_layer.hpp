@@ -94,11 +94,9 @@ class BaseConvolutionLayer : public Layer<Dtype> {
   bool force_nd_im2col_;
   
   bool prune_bias_;
-  bool fill_prune_mask_;
   bool train_pruned_layer_;
   bool filled_prune_mask_;
   bool cluster_bias_;
-  bool fill_cluster_mask_;
   bool train_clustered_layer_;
   bool filled_cluster_mask_;
 

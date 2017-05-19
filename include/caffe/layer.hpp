@@ -186,7 +186,7 @@ class Layer {
   /**
    * @brief Returns the vector of prune/cluster mask blobs.
    */
-  vector<shared_ptr<Blob<Dtype> > >& masks() {
+  vector<shared_ptr<Blob<unsigned int> > >& masks() {
     return masks_;
   }
 
@@ -331,7 +331,7 @@ class Layer {
   Phase phase_;
   /** The vector that stores the learnable parameters as a set of blobs. */
   vector<shared_ptr<Blob<Dtype> > > blobs_;
-  vector<shared_ptr<Blob<Dtype> > > masks_;
+  vector<shared_ptr<Blob<unsigned int> > > masks_;
   /** Vector indicating whether to compute the diff of each param blob. */
   vector<bool> param_propagate_down_;
 
