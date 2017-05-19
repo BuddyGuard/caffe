@@ -1,47 +1,51 @@
 import os
 import sys
+import glob
 import caffe
 import numpy as np
 import argparse
 import operator
 from collections import OrderedDict
+from sklearn.cluster import KMeans
 
 caffe.set_mode_gpu()
 
 caffe_root = '/home/karthik/workspace/caffe'
 
-# SSD VGGNet PASCAL LAYER INDEPENDENT
-#prototxt = os.path.join(caffe_root, 'models/VGGNet/VOC0712/SSD_300x300/deploy.prototxt_bkp')
-#pruned_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Independent_Pruning')
-#clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Clustering_Layer_Independent_Pruned_Models')
-#exclude_layers = ['conv4_3_norm'] # Skip this layer's parameters
+# SSD VGGNet PASCAL LAYER INDEPENDENT - PRUNED - RETRAINED MODELS
+model_folders_filter = 'models/VGGNet/VOC0712/SSD_300x300_layer_indep_*_pruned'
+model_filter = 'VGG_VOC0712_SSD_300x300_layer_indep_*_pruned_iter_15000.caffemodel'
+clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Models')
 
-# SSD VGGNet PASCAL LAYER WISE
-prototxt = os.path.join(caffe_root, 'models/VGGNet/VOC0712/SSD_300x300/deploy.prototxt_bkp')
-pruned_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Wise_Pruning')
-clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Clustering_Layer_Wise_Pruned_Models')
+# SSD VGGNet PASCAL LAYER WISE - PRUNED - RETRAINED MODELS 
+#model_folders_filter = 'models/VGGNet/VOC0712/SSD_300x300_layer_wise_*_pruned'
+#model_filter = 'VGG_VOC0712_SSD_300x300_layer_wise_*_pruned_iter_15000.caffemodel'
+#clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Models')
+
 exclude_layers = ['conv4_3_norm'] # Skip this layer's parameters
 
 # Check Clustered Models path
 if not os.path.isdir(clustered_models_path):
     os.makedirs(clustered_models_path)
 
-# Maximum number of iterations for clustering
-max_iters = 1000
-
 # List all the pruned models
-pruned_models = os.listdir(pruned_models_path)
-pruned_models.sort()
+pruned_models_folder = glob.glob(model_folders_filter)
+pruned_models_folder.sort()
 
 # Start clustering each model
-for model in pruned_models:
-    pruned_model = os.path.join(pruned_models_path, model)
-    pruned_net = caffe.Net(prototxt, pruned_model, caffe.TEST)
-    clustered_net = caffe.Net(prototxt, pruned_model, caffe.TEST)
+for model_folder in pruned_models_folder:
+    pruned_model = glob.glob(os.path.join(model_folder, model_filter))[0]
+    pruned_model_proto = os.path.join(model_folder, 'deploy.prototxt')
+    clustered_model = os.path.splitext(os.path.basename(pruned_model))[0]
+    clustered_model = os.path.join(clustered_models_path, '{}_clustered.caffemodel'.format(clustered_model))
+    if os.path.isfile(clustered_model):
+        continue
+    pruned_net = caffe.Net(pruned_model_proto, pruned_model, caffe.TEST)
+    clustered_net = caffe.Net(pruned_model_proto, pruned_model, caffe.TEST)
+    print 'Clustering : {}'.format(pruned_model)
     for name, param in pruned_net.params.iteritems():
         weights_dict = dict()
         if name not in exclude_layers:
-            print 'Collecting Non-zeros params in ',name
             # Collect all parameters in the layer into dictionary
             weights = param[0].data
             for n in xrange(weights.shape[0]):
@@ -52,71 +56,43 @@ for model in pruned_models:
                                 key = '{}-{}-{}-{}-{}'.format(name, n, c, h, w)
                                 if weights[n,c,h,w]:
                                     weights_dict[key] = weights[n,c,h,w]
-            print 'Total params : ',weights.size
-            print 'Number of non-zero params : ', len(weights_dict.keys())
             # Find minimum and maximum values
             min_val = weights.flatten().min()
             max_val = weights.flatten().max()
             # Initialize centroids
             centroids = np.linspace(min_val, max_val, num=256)
-            # Initialize some temp variables
-            iters = 0
-            cost_sum = None
-            final_centroids = None
-            previous_distance = sys.float_info[0]
-            current_distance = 0.0
-            print 'Clustering Layer : ',name
-            # Clustering weights
-            while iters < max_iters:
-                # Check convergence
-                if (np.fabs(previous_distance-current_distance)/previous_distance) < 0.01:
-                    final_centroids = cents_wts_labels_dict
-                    break
-                # Update previous distance
-                previous_distance = current_distance
-                current_distance = 0.0
-                centroids_dict = dict()
-                cents_wts_labels_dict = dict()
-                for c in centroids:
-                    centroids_dict[c] = []
-                    cents_wts_labels_dict[c] = []
-                min_distances = []
-                for key in weights_dict.keys():
-                    wt = weights_dict[key]
-                    distances = np.fabs(centroids - wt)
-                    centroid = centroids[np.argmin(distances)]
-                    min_distances.append(distances.min())
-                    centroids_dict[centroid].append(wt)
-                    cents_wts_labels_dict[centroid].append(key)
-                # Calculate new distance
-                current_distance = np.sum(np.asarray(min_distances))
-                # Update centroids
-                centroids = []
-                for centroid in centroids_dict.keys():
-                    wts = centroids_dict[centroid]
-                    if len(wts):
-                        centroids.append(np.mean(np.asarray(wts)))
-                    else:
-                        centroids.append(centroid)
-                print 'Iter {} : J={}'.format(iters+1, current_distance)
-                iters += 1
-            # Update  Weights in Clustered Net
-            for centroid in final_centroids.keys():
-                keys = final_centroids[centroid]
-                for key in keys:
-                    param_idx = key.strip('\n')
-                    param_idx = key.split('-')
-                    name = param_idx[0]
-                    n = int(param_idx[1])
-                    c = int(param_idx[2])
-                    h = int(param_idx[3])
-                    w = int(param_idx[4])
-                    clustered_net.params[name][0].data[n,c,h,w] = centroid
-
-    clustered_model = os.path.join(clustered_models_path,
-                      '{}_clustered.caffemodel'.format(os.path.splitext(model)[0]))
+            # Initialize centroids
+            num_centroids = 2**8 - 1
+            centroids = np.linspace(min_val, max_val, num=num_centroids).reshape(-1, 1)
+            # Training data
+            nnz = len(weights_dict)
+            X = np.array(weights_dict.values(), dtype=np.float32).reshape(-1, 1)
+            print '\nClustering : {}'.format(name)
+            # K-Means
+            kmeans = KMeans(n_clusters=num_centroids, 
+                            init=centroids, n_init=1, n_jobs=-1, verbose=1).fit(X)
+            itr = 1
+            while np.unique(kmeans.labels_).size != num_centroids:
+                print 'Reinit itr = {}, labels={}'.format(itr, np.unique(kmeans.labels_).size)
+                centroids = kmeans.cluster_centers_
+                kmeans = KMeans(n_clusters=num_centroids, 
+                                init=centroids, n_init=1, n_jobs=-1, verbose=1).fit(X)
+                itr += 1
+            # Update clustered net
+            final_centroids = kmeans.cluster_centers_.flatten()
+            labels = kmeans.labels_ 
+            print 'Clustered {} : params={}, centroids={}, labels={}'.format(name, nnz, 
+                                                                        final_centroids.size, np.unique(labels).size)
+            for label, key in zip(labels, weights_dict.keys()):
+                param_idx = key.strip('\n')
+                param_idx = key.split('-')
+                name = param_idx[0]
+                n = int(param_idx[1])
+                c = int(param_idx[2])
+                h = int(param_idx[3])
+                w = int(param_idx[4])
+                clustered_net.params[name][0].data[n,c,h,w] = final_centroids[label]
+    
     clustered_net.save(clustered_model)
     print 'Saved clustered model to ',clustered_model
-
 print 'All done!'
-  
