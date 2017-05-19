@@ -9,26 +9,23 @@ import shutil
 import stat
 import subprocess
 import sys
-import argparse
 
 usage = '''
 Usage:
-	python score_pruned_ssd_pascal_vggnet.py <prune> <prune-tpye> <prune-percent> <decompressed>
+	python score_pruned_ssd_pascal_cdp_vggnet.py <prune> <prune-tpye> <prune-percent>
 				or
-	python score_pruned_ssd_pascal_vggnet.py <prune> <prune-type> <prune-percent> <std-dev> <decompressed>
+	python score_pruned_ssd_pascal_cdp_vggnet.py <prune> <prune-type> <prune-percent> <std-dev>
                 or
-    python score_pruned_ssd_pascal_vggnet.py <cluster> <prune-tpye> <prune-percent> <decompressed>
+    python score_pruned_ssd_pascal_cdp_vggnet.py <cluster> <prune-tpye> <prune-percent>
                 or
-    python score_pruned_ssd_pascal_vggnet.py <cluster> <prune-type> <prune-percent> <std-dev> <decompressed>
-
+    python score_pruned_ssd_pascal_cdp_vggnet.py <cluster> <prune-type> <prune-percent> <std-dev>
 	
     <prune-type> : layer_indep, layer_wise
 '''
 
 prune = False
 cluster = False
-decompressed = False
-if len(sys.argv) == 5 or len(sys.argv) == 6:
+if len(sys.argv) == 4 or len(sys.argv) == 5:
     if sys.argv[1] == 'prune':
         prune = True
     elif sys.argv[1] == 'cluster':
@@ -36,16 +33,11 @@ if len(sys.argv) == 5 or len(sys.argv) == 6:
     prune_type = sys.argv[2]
     prune_percent = sys.argv[3]
     if len(sys.argv) == 5:
-        if sys.argv[4] == 'decompressed':
-            decompressed = True
-    if len(sys.argv) == 6:
         std_dev = sys.argv[4]
-        if sys.argv[5] == 'decompressed':
-            decompressed = True
-
 else:
    print(usage)
    sys.exit()
+
 
 # Add extra layers on top of a "base" network (e.g. VGGNet or Inception).
 def AddExtraLayers(net, use_batchnorm=True):
@@ -88,10 +80,10 @@ caffe_root = os.getcwd()
 # Set true if you want to start training right after generating all files.
 run_soon = True
 
-# The database file for training data. Created by data/VOC0712/create_data.sh
-train_data = "examples/VOC0712/VOC0712_trainval_lmdb"
-# The database file for testing data. Created by data/VOC0712/create_data.sh
-test_data = "examples/VOC0712/VOC0712_test_lmdb"
+# The database file for training data. Created by data/VOC0712CDP/create_data.sh
+train_data = "examples/VOC0712CDP/VOC0712CDP_trainval_lmdb"
+# The database file for testing data. Created by data/VOC0712CDP/create_data.sh
+test_data = "examples/VOC0712CDP/VOC0712CDP_test_lmdb"
 # Specify the batch sampler.
 resize_width = 300
 resize_height = 300
@@ -226,14 +218,14 @@ else:
 # The job name should be same as the name used in examples/ssd/ssd_pascal.py.
 job_name = "SSD_{}".format(resize)
 # The name of the model. Modify it if you want.
-model_name = "VGG_VOC0712_{}".format(job_name)
+model_name = "VGG_VOC0712CDP_{}".format(job_name)
 
 # Directory which stores the model .prototxt file.
-save_dir = "models/VGGNet/VOC0712/{}_score".format(job_name)
+save_dir = "models/VGGNet/VOC0712CDP/{}_score".format(job_name)
 # Directory which stores the snapshot of trained models.
-snapshot_dir = "models/VGGNet/VOC0712/{}".format(job_name)
+snapshot_dir = "models/VGGNet/VOC0712CDP/{}".format(job_name)
 # Directory which stores the job script and log file.
-job_dir = "jobs/VGGNet/VOC0712/{}_score".format(job_name)
+job_dir = "jobs/VGGNet/VOC0712CDP/{}_score".format(job_name)
 # Directory which stores the detection results.
 output_result_dir = "{}/data/VOCdevkit/results/VOC2007/{}_score/Main".format(os.environ['HOME'], job_name)
 
@@ -261,14 +253,14 @@ if max_iter == 0:
   sys.exit()
 
 # Stores the test image names and sizes. Created by data/VOC0712/create_list.sh
-name_size_file = "data/VOC0712/test_name_size.txt"
+name_size_file = "data/VOC0712CDP/test_name_size.txt"
 # The resume model.
 pretrain_model = "{}_iter_{}.caffemodel".format(snapshot_prefix, max_iter)
 # Stores LabelMapItem.
-label_map_file = "data/VOC0712/labelmap_voc.prototxt"
+label_map_file = "data/VOC0712CDP/labelmap_voc_cdp.prototxt"
 
 # MultiBoxLoss parameters.
-num_classes = 21
+num_classes = 4
 share_location = True
 background_label_id=0
 train_on_diff_gt = True
@@ -360,7 +352,7 @@ elif normalization_mode == P.Loss.FULL:
 freeze_layers = ['conv1_1', 'conv1_2', 'conv2_1', 'conv2_2']
 
 # Evaluate on whole test set.
-num_test_image = 4952
+num_test_image = 2695
 test_batch_size = 8
 # Ideally test_batch_size should be divisible by num_test_image,
 # otherwise mAP will be slightly off the true value.
@@ -536,22 +528,14 @@ with open(job_file, 'w') as f:
   f.write('--solver="{}" \\\n'.format(solver_file))
   f.write('--weights="{}" \\\n'.format(pretrain_model))
   if solver_param['solver_mode'] == P.Solver.GPU:
-    if prune_type == 'layer_indep' and prune and not decompressed:
+    if prune_type == 'layer_indep' and prune:
         f.write('--gpu {} 2>&1 | tee {}/{}_{}%_{}_pruned.log\n'.format(gpus, job_dir, model_name, prune_percent, prune_type))
-    elif prune_type == 'layer_indep' and prune and decompressed:
-        f.write('--gpu {} 2>&1 | tee {}/{}_{}%_{}_pruned_decompressed.log\n'.format(gpus, job_dir, model_name, prune_percent, prune_type))
-    elif prune_type == 'layer_indep' and cluster and not decompressed:
+    elif prune_type == 'layer_indep' and cluster:
         f.write('--gpu {} 2>&1 | tee {}/{}_{}%_{}_pruned_clustered.log\n'.format(gpus, job_dir, model_name, prune_percent, prune_type))
-    elif prune_type == 'layer_indep' and cluster and decompressed:
-        f.write('--gpu {} 2>&1 | tee {}/{}_{}%_{}_pruned_clustered_decompressed.log\n'.format(gpus, job_dir, model_name, prune_percent, prune_type))
-    elif prune_type == 'layer_wise' and prune and not decompressed:
+    elif prune_type == 'layer_wise' and prune:
         f.write('--gpu {} 2>&1 | tee {}/{}_{}_stddev_{}%_{}_pruned.log\n'.format(gpus, job_dir, model_name, std_dev, prune_percent, prune_type))
-    elif prune_type == 'layer_wise' and prune and decompressed:
-        f.write('--gpu {} 2>&1 | tee {}/{}_{}_stddev_{}%_{}_pruned_decompressed.log\n'.format(gpus, job_dir, model_name, std_dev, prune_percent, prune_type))
-    elif prune_type == 'layer_wise' and cluster and not decompressed:
+    elif prune_type == 'layer_wise' and cluster:
         f.write('--gpu {} 2>&1 | tee {}/{}_{}_stddev_{}%_{}_pruned_clustered.log\n'.format(gpus, job_dir, model_name, std_dev, prune_percent, prune_type))
-    elif prune_type == 'layer_wise' and cluster and decompressed:
-        f.write('--gpu {} 2>&1 | tee {}/{}_{}_stddev_{}%_{}_pruned_clustered_decompressed.log\n'.format(gpus, job_dir, model_name, std_dev, prune_percent, prune_type))
   else:
     f.write('2>&1 | tee {}/{}.log\n'.format(job_dir, model_name))
 

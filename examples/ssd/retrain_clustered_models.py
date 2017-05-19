@@ -5,9 +5,9 @@ import subprocess
 caffe_root = '/home/karthik/workspace/caffe'
 
 # SSD VGGNet PASCAL LAYER INDEPENDENT
-clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Clustering_Layer_Independent_Pruned_Models')
-retraining_script = 'examples/ssd/retrain_clustered_ssd_pascal_vggnet.py'
-prune_type = 'layer_indep'
+#clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Models')
+#retraining_script = 'examples/ssd/retrain_clustered_ssd_pascal_vggnet.py'
+#prune_type = 'layer_indep'
 
 # SSD VGGNet PASCAL LAYER WISE
 #pruned_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Wise_Pruning')
@@ -21,9 +21,9 @@ prune_type = 'layer_indep'
 #gammas = np.arange(0.1, 2.1, 0.1)
 
 # SSD ResNet PASCAL LAYER INDEPENDENT
-#pruned_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Independent_Pruning')
-#retraining_script = 'examples/ssd/retrain_pruned_ssd_pascal_resnet.py'
-#prune_type = 'layer_indep'
+clustered_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Models')
+retraining_script = 'examples/ssd/retrain_clustered_ssd_pascal_resnet.py'
+prune_type = 'layer_indep'
 
 clustered_models = os.listdir(clustered_models_path)
 clustered_models.sort()

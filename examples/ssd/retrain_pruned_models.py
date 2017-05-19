@@ -25,7 +25,7 @@ caffe_root = '/home/karthik/workspace/caffe'
 #retraining_script = 'examples/ssd/retrain_pruned_ssd_pascal_resnet.py'
 #prune_type = 'layer_indep'
 
-# SSD ResNet PASCAL LAYER INDEPENDENT
+# SSD RESNET - VOC0712 -  LAYER WISE PRUNED MODELS - RETRAINING
 pruned_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Wise_Pruning')
 retraining_script = 'examples/ssd/retrain_pruned_ssd_pascal_resnet.py'
 prune_type = 'layer_wise'
