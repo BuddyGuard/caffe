@@ -10,17 +10,23 @@ caffe.set_mode_cpu()
 caffe_root = '/home/karthik/workspace/caffe'
 
 # SSD VGGNet PASCAL LAYER INDEPENDENT - PRUNED - RETRAINED 10K - CLUSTERED - COMPRESSED MODELS
-#retrained_models_folders = glob.glob('models/VGGNet/VOC0712/SSD_300x300_layer_indep_*_pruned')
-#compressed_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Compressed_Models')
-#decompressed_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Decompressed_Models')
+retrained_models_folders = glob.glob('models/VGGNet/VOC0712/SSD_300x300_layer_indep_*_pruned')
+compressed_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Compressed_Models')
+decompressed_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Decompressed_Models')
 
 # SSD VGGNet PASCAL LAYER WISE - PRUNED - RETRAINED 15K - CLUSTERED - COMPRESSED MODELS
-retrained_models_folders = glob.glob('models/VGGNet/VOC0712/SSD_300x300_layer_wise_*_pruned')
-compressed_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Compressed_Models')
-decompressed_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Decompressed_Models')
+#retrained_models_folders = glob.glob('models/VGGNet/VOC0712/SSD_300x300_layer_wise_*_pruned')
+#compressed_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Compressed_Models')
+#decompressed_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Decompressed_Models')
 
 codebook_size = 2**8
 ind_bits_size = 2**4
+
+def decode_spm_stream(enc_spm_stream, nnz, bits):
+    spm_stream = np.zeros(nnz, dtype=np.uint8)
+    spm_stream[np.arange(0, nnz, 2)] = enc_spm_stream % bits                  
+    spm_stream[np.arange(1, nnz, 2)] = enc_spm_stream / bits
+    return spm_stream 
 
 def decode_relative_indexing(weights, spm_stream, ind_stream, codebook, nnz, ind_bits):
     # Init holders

@@ -10,16 +10,16 @@ caffe.set_mode_cpu()
 caffe_root = '/home/karthik/workspace/caffe'
 
 # SSD VGGNet PASCAL LAYER INDEPENDENT - PRUNED - RETRAINED 10K - CLUSTERED MODELS
-#retrained_iter = '10000'
-#retrained_models_folders = glob.glob('models/VGGNet/VOC0712/SSD_300x300_layer_indep_*_pruned')
-#clustered_models_path = 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Models'
-#compressed_models_path = 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Compressed_Models'
+retrained_iter = '10000'
+retrained_models_folders = glob.glob('models/VGGNet/VOC0712/SSD_300x300_layer_indep_*_pruned')
+clustered_models_path = 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Models'
+compressed_models_path = 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Compressed_Models'
 
 # SSD VGGNet PASCAL LAYER WISE - PRUNED - RETRAINED 15K - CLUSTERED MODELS
-retrained_iter = '15000'
-retrained_models_folders = glob.glob('models/VGGNet/VOC0712/SSD_300x300_layer_wise_*_pruned') 
-clustered_models_path = 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Models'
-compressed_models_path = 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Compressed_Models'
+#retrained_iter = '15000'
+#retrained_models_folders = glob.glob('models/VGGNet/VOC0712/SSD_300x300_layer_wise_*_pruned') 
+#clustered_models_path = 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Models'
+#compressed_models_path = 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Compressed_Models'
 
 codebook_size = 2**8
 ind_bits_size = 2**4
@@ -43,7 +43,7 @@ def get_nnz(weights, bits):
             zcount += 1
             if zcount % bits == 0:
                 nnz += 1
-                zcouunt = 0
+                zcount = 0
     return nnz
 
 def encode_to_relative_indexing(weights, bits):
@@ -72,6 +72,16 @@ def encode_to_relative_indexing(weights, bits):
         enc_ind_stream += enc_ind[np.arange(1, nnz, 2)] * bits 
                                                         
     return enc_val, enc_ind_stream
+
+def encode_spm_stream(spm_stream, nnz, bits):
+    enc_spm_stream_size = (nnz - 1) / 2 + 1
+    enc_spm_stream = np.zeros(enc_spm_stream_size, dtype=np.uint8)
+    enc_spm_stream += spm_stream[np.arange(0, nnz, 2)]
+    if nnz % 2 != 0:
+        enc_spm_stream[:-1] += spm_stream[np.arange(1, nnz, 2)] * bits
+    else:
+        enc_spm_stream += spm_stream[np.arange(1, nnz, 2)] * bits
+    return enc_spm_stream
 
 for model in clustered_models:
     if not model.endswith('.caffemodel'):
@@ -119,6 +129,7 @@ for model in clustered_models:
                 spm_stream = np.zeros(len(val_stream), dtype=np.uint8)
                 for pos, val in enumerate(val_stream):
                     spm_stream[pos] = codebook[val]
+                #enc_spm_stream = encode_spm_stream(spm_stream, spm_stream.size, ind_bits_size)
                 codebook_vals = np.array(codebook.keys(), dtype=np.float32)
                 print 'Compressing {} : codebook={}, spm_stream={}, ind_stream={}'.format(name, codebook_vals.size,
                                                                                           spm_stream.size, ind_stream.size)

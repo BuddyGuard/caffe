@@ -10,23 +10,30 @@ caffe.set_mode_cpu()
 caffe_root = '/home/karthik/workspace/caffe'
 
 # SSD VGGNet PASCAL LAYER INDEPENDENT - PRUNED - RETRAINED 10K - CLUSTERED MODELS
-#retrained_models_folders = glob.glob('models/VGGNet/VOC0712/SSD_300x300_layer_indep_*_pruned')
-#clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Models')
-#decompressed_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Decompressed_Models')
+itr = 10000
+retrained_models_folders = glob.glob('models/VGGNet/VOC0712/SSD_300x300_layer_indep_*_pruned')
+clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Models')
+decompressed_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Decompressed_Models')
 
 # SSD VGGNet PASCAL LAYER INDEPENDENT - PRUNED - RETRAINED 10K - CLUSTERED MODELS
-retrained_models_folders = glob.glob('models/VGGNet/VOC0712/SSD_300x300_layer_wise_*_pruned')
-clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Models')
-decompressed_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Decompressed_Models')
+#retrained_models_folders = glob.glob('models/VGGNet/VOC0712/SSD_300x300_layer_wise_*_pruned')
+#clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Models')
+#decompressed_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Decompressed_Models')
 
 exclude_layers = ['conv4_3_norm'] # Skip this layer's parameters
 
 # List clustered models
-clustered_models = os.listdir(clustered_models_path)
+clustered_models = []
+for model in os.listdir(clustered_models_path):
+    if str(itr) in model:
+        clustered_models.append(model)
 clustered_models.sort()
 
 # List decompressed models
-decompressed_models = os.listdir(decompressed_models_path)
+decompressed_models = []
+for model in os.listdir(decompressed_models_path):
+    if str(itr) in model:
+        decompressed_models.append(model)
 decompressed_models.sort()
 
 models_diff = OrderedDict()
@@ -54,17 +61,15 @@ for clustered_model, decompressed_model in zip(clustered_models, decompressed_mo
     total_weights_diff = 0
     total_bias_diff = 0
     for name, param in clustered_net.params.iteritems():
-        if name in exclude_layers:
-            continue
-        clustered_weights = param[0].data
-        clustered_bias = param[1].data
-        decompressed_weights = decompressed_net.params[name][0].data
-        decompressed_bias =  decompressed_net.params[name][1].data
-        #for a, b in zip(clustered_weights.flatten(), decompressed_weights.flatten()):
-        #    print 'orig : {}, decomp = {}'.format(a, b)
-        #sys.exit()
-        total_weights_diff += np.sum(clustered_weights) - np.sum(decompressed_weights) 
-        total_bias_diff += np.sum(clustered_bias) - np.sum(decompressed_bias)
+        for pos, p in enumerate(param):
+            if len(p.data.shape) == 4:
+                clustered_weights = p.data
+                decompressed_weights = decompressed_net.params[name][pos].data
+                total_weights_diff += np.sum(clustered_weights) - np.sum(decompressed_weights) 
+            else:
+                clustered_bias = p.data
+                decompressed_bias =  decompressed_net.params[name][pos].data
+                total_bias_diff += np.sum(clustered_bias) - np.sum(decompressed_bias)
     models_diff[clustered_model] = {'decompressed_model':decompressed_model,
                                     'weights_diff':total_weights_diff,
                                     'bias_diff':total_bias_diff}
