@@ -8,9 +8,9 @@ from collections import OrderedDict
 caffe.set_mode_cpu()
 
 # SSD VGG VOC0712 LAYER INDEP PRUNED RETRAINED
-model_folders_filter = 'models/VGGNet/VOC0712/SSD_300x300_layer_indep_*_pruned'
-model_filter = 'VGG_VOC0712_SSD_300x300_layer_indep_*_pruned_iter_15000.caffemodel'
-model_folders = glob.glob(model_folders_filter)
+#model_folders_filter = 'models/VGGNet/VOC0712/SSD_300x300_layer_indep_*_pruned'
+#model_filter = 'VGG_VOC0712_SSD_300x300_layer_indep_*_pruned_iter_15000.caffemodel'
+#model_folders = glob.glob(model_folders_filter)
 
 # SSD VGG VOC0712 LAYER INDEP PRUNED RETRAINED
 #model_folders_filter = 'models/VGGNet/VOC0712/SSD_300x300_layer_wise_*_pruned'
@@ -20,6 +20,11 @@ model_folders = glob.glob(model_folders_filter)
 # SSD VGG VOC0712 LAYER INDEP PRUNED - RETRAINED 15K - CLUSTERED - RETRAINED 1K 
 #model_folders_filter = 'models/VGGNet/VOC0712/SSD_300x300_layer_indep_*_pruned_clustered'
 #model_filter = 'VGG_VOC0712_SSD_300x300_layer_indep_*_pruned_clustered_iter_500.caffemodel'
+
+# SSD VGG - COCO -  LAYER INDEP PRUNED - RETRAINED 15K
+model_folders_filter = 'models/VGGNet/coco/SSD_300x300_layer_indep_*_pruned'
+model_filter = 'VGG_coco_SSD_300x300_layer_indep_*_pruned_iter_15000.caffemodel'
+model_folders = glob.glob(model_folders_filter)
 
 model_folders = glob.glob(model_folders_filter)
 
