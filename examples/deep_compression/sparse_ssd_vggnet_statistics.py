@@ -22,8 +22,13 @@ caffe.set_mode_cpu()
 #model_filter = 'VGG_VOC0712_SSD_300x300_layer_indep_*_pruned_clustered_iter_500.caffemodel'
 
 # SSD VGG - COCO -  LAYER INDEP PRUNED - RETRAINED 15K
-model_folders_filter = 'models/VGGNet/coco/SSD_300x300_layer_indep_*_pruned'
-model_filter = 'VGG_coco_SSD_300x300_layer_indep_*_pruned_iter_15000.caffemodel'
+#model_folders_filter = 'models/VGGNet/coco/SSD_300x300_layer_indep_*_pruned'
+#model_filter = 'VGG_coco_SSD_300x300_layer_indep_*_pruned_iter_15000.caffemodel'
+#model_folders = glob.glob(model_folders_filter)
+
+# SSD VGG - COCO -  LAYER WISE PRUNED - RETRAINED 15K
+model_folders_filter = 'models/VGGNet/coco/SSD_300x300_layer_wise_*_pruned'
+model_filter = 'VGG_coco_SSD_300x300_layer_wise_*_pruned_iter_15000.caffemodel'
 model_folders = glob.glob(model_folders_filter)
 
 model_folders = glob.glob(model_folders_filter)
