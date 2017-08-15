@@ -9,35 +9,18 @@ import shutil
 import stat
 import subprocess
 import sys
+import argparse
 
-usage = '''
-Usage:
-	python score_pruned_ssd_pascal_cdp_vggnet.py <prune> <prune-tpye> <prune-percent>
-				or
-	python score_pruned_ssd_pascal_cdp_vggnet.py <prune> <prune-type> <prune-percent> <std-dev>
-                or
-    python score_pruned_ssd_pascal_cdp_vggnet.py <cluster> <prune-tpye> <prune-percent>
-                or
-    python score_pruned_ssd_pascal_cdp_vggnet.py <cluster> <prune-type> <prune-percent> <std-dev>
-	
-    <prune-type> : layer_indep, layer_wise
-'''
+args_parser = argparse.ArgumentParser()
+args_parser.add_argument('--prune_type', type=str, help="Pruning type")
+args_parser.add_argument('--centroids', type=int, help="Number of centroids")
+args_parser.add_argument('--prune_percent', type=int, help="Pruned Percentage")
+args_parser.add_argument('--std_dev', type=float, help="Standard deviation used in layer wise pruning")
+args_parser.add_argument('--pruned', action='store_true', help='Using pruned model')
+args_parser.add_argument('--clustered', action='store_true', help='Using clustered model')
+args_parser.add_argument('--decompressed', action='store_true', help='Using decompressed model')
 
-prune = False
-cluster = False
-if len(sys.argv) == 4 or len(sys.argv) == 5:
-    if sys.argv[1] == 'prune':
-        prune = True
-    elif sys.argv[1] == 'cluster':
-        cluster = True
-    prune_type = sys.argv[2]
-    prune_percent = sys.argv[3]
-    if len(sys.argv) == 5:
-        std_dev = sys.argv[4]
-else:
-   print(usage)
-   sys.exit()
-
+args = args_parser.parse_args()
 
 # Add extra layers on top of a "base" network (e.g. VGGNet or Inception).
 def AddExtraLayers(net, use_batchnorm=True):
@@ -528,14 +511,22 @@ with open(job_file, 'w') as f:
   f.write('--solver="{}" \\\n'.format(solver_file))
   f.write('--weights="{}" \\\n'.format(pretrain_model))
   if solver_param['solver_mode'] == P.Solver.GPU:
-    if prune_type == 'layer_indep' and prune:
-        f.write('--gpu {} 2>&1 | tee {}/{}_{}%_{}_pruned.log\n'.format(gpus, job_dir, model_name, prune_percent, prune_type))
-    elif prune_type == 'layer_indep' and cluster:
-        f.write('--gpu {} 2>&1 | tee {}/{}_{}%_{}_pruned_clustered.log\n'.format(gpus, job_dir, model_name, prune_percent, prune_type))
-    elif prune_type == 'layer_wise' and prune:
-        f.write('--gpu {} 2>&1 | tee {}/{}_{}_stddev_{}%_{}_pruned.log\n'.format(gpus, job_dir, model_name, std_dev, prune_percent, prune_type))
-    elif prune_type == 'layer_wise' and cluster:
-        f.write('--gpu {} 2>&1 | tee {}/{}_{}_stddev_{}%_{}_pruned_clustered.log\n'.format(gpus, job_dir, model_name, std_dev, prune_percent, prune_type))
+    if args.pruned and args.prune_type == 'layer_indep':
+        f.write('--gpu {} 2>&1 | tee {}/{}_{}%_{}_pruned.log\n'.format(gpus, job_dir, model_name, args.prune_percent, args.prune_type))
+    elif args.pruned and args.prune_type == 'layer_indep' and args.decompressed:
+        f.write('--gpu {} 2>&1 | tee {}/{}_{}%_{}_pruned_decompressed.log\n'.format(gpus, job_dir, model_name, args.prune_percent, args.prune_type))
+    elif args.clustered and args.prune_type == 'layer_indep' and not args.decompressed:
+        f.write('--gpu {} 2>&1 | tee {}/{}_{}%_{}_pruned_clustered_{}.log\n'.format(gpus, job_dir, model_name, args.prune_percent, args.prune_type, args.centroids))
+    elif args.clustered and args.prune_type == 'layer_indep' and args.decompressed:
+        f.write('--gpu {} 2>&1 | tee {}/{}_{}%_{}_pruned_clustered_{}_decompressed.log\n'.format(gpus, job_dir, model_name, args.prune_percent, args.prune_type, args.centroids))
+    elif args.pruned and args.prune_type == 'layer_wise':
+        f.write('--gpu {} 2>&1 | tee {}/{}_{}_stddev_{}%_{}_pruned.log\n'.format(gpus, job_dir, model_name, std_dev, args.prune_percent, args.prune_type))
+    elif args.pruned and args.prune_type == 'layer_wise' and args.decompressed:
+        f.write('--gpu {} 2>&1 | tee {}/{}_{}_stddev_{}%_{}_pruned_decompressed.log\n'.format(gpus, job_dir, model_name, args.std_dev, args.prune_percent, args.prune_type))
+    elif args.clustered and args.prune_type == 'layer_wise' and not args.decompressed:
+        f.write('--gpu {} 2>&1 | tee {}/{}_{}_stddev_{}%_{}_pruned_clustered_{}.log\n'.format(gpus, job_dir, model_name, args.std_dev, args.prune_percent, args.prune_type, args.centroids))
+    elif args.prune_type == 'layer_wise' and args.clustered and args.decompressed:
+        f.write('--gpu {} 2>&1 | tee {}/{}_{}_stddev_{}%_{}_pruned_clustered_{}_decompressed.log\n'.format(gpus, job_dir, model_name, args.std_dev, args.prune_percent, args.prune_type, args.centroids))
   else:
     f.write('2>&1 | tee {}/{}.log\n'.format(job_dir, model_name))
 

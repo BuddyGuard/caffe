@@ -9,28 +9,16 @@ import shutil
 import stat
 import subprocess
 import sys
+import argparse
 
-usage = '''
-Usage:
-        python retrain_pruned_ssd_pascal_vggnet.py <prune-tpye> <prune-percent> <pruned-model>
-                                or
-        python retrain_pruned_ssd_pascal_vggnet.py <prune-type> <prune-percent> <std-dev> <pruned-model>
-
-        <prune-type> : layer_indep, layer_wise
-'''
-
-if len(sys.argv) == 4 or len(sys.argv) == 5:
-    prune_type = sys.argv[1]
-    prune_percent = sys.argv[2]
-    if len(sys.argv) == 4:
-        pruned_model = sys.argv[3]
-    elif len(sys.argv) == 5:
-        pruned_model = sys.argv[4]
-        std_dev = sys.argv[3]
-else:
-   print(usage)
-   sys.exit()
- 
+args_parser = argparse.ArgumentParser()
+args_parser.add_argument('--prune_type', type=str, help="Pruning type")
+args_parser.add_argument('--prune_percent', type=int, help="Pruned Percentage")
+args_parser.add_argument('--pruned_model', type=str, help="Pruned model path")
+args_parser.add_argument('--std_dev', type=float, help="Standard deviation used in layer wise pruning")
+args_parser.add_argument('--max_itr', type=int, help='Maximum retrain iterations')
+args_parser.add_argument('--step_itr', type=int, help='Iteration at which learning rate must be reduced further')
+args = args_parser.parse_args()
 
 # Add extra layers on top of a "base" network (e.g. VGGNet or Inception).
 def AddExtraLayers(net, use_batchnorm=True, prune_mask=False):
@@ -212,10 +200,10 @@ else:
     base_lr = 0.000004
 
 # Modify the job name if you want.
-if prune_type == 'layer_indep':
-    job_name = "SSD_{}_{}_{}%_pruned".format(resize, 'layer_indep', prune_percent)
-elif prune_type == 'layer_wise':
-    job_name = "SSD_{}_{}_{}_stddev_{}%_pruned".format(resize, 'layer_wise', std_dev, prune_percent)
+if args.prune_type == 'layer_indep':
+    job_name = "SSD_{}_{}_{}%_pruned_itr_{}".format(resize, 'layer_indep', args.prune_percent, '{}K'.format(args.max_itr/1000))
+elif args.prune_type == 'layer_wise':
+    job_name = "SSD_{}_{}_{}_stddev_{}%_pruned_itr_{}".format(resize, 'layer_wise', args.std_dev, '{}K'.format(args.max_itr/1000))
 
 # The name of the model. Modify it if you want.
 model_name = "VGG_VOC0712_{}".format(job_name)
@@ -242,7 +230,7 @@ job_file = "{}/{}.sh".format(job_dir, model_name)
 # Stores the test image names and sizes. Created by data/VOC0712/create_list.sh
 name_size_file = "data/VOC0712/test_name_size.txt"
 # The pretrained model. We use the Fully convolutional reduced (atrous) VGGNet.
-pretrain_model = pruned_model
+pretrain_model = args.pruned_model
 # Stores LabelMapItem.
 label_map_file = "data/VOC0712/labelmap_voc.prototxt"
 
@@ -309,12 +297,12 @@ clip = True
 
 # Solver parameters.
 # Defining which GPUs to use.
-gpus = "0,1,2,3"
+gpus = "1,3"
 gpulist = gpus.split(",")
 num_gpus = len(gpulist)
 
 # Divide the mini-batch to different GPUs.
-batch_size = 32
+batch_size = 16
 accum_batch_size = 32
 iter_size = accum_batch_size / batch_size
 solver_mode = P.Solver.CPU
@@ -341,7 +329,7 @@ freeze_layers = []
 
 # Evaluate on whole test set.
 num_test_image = 4952
-test_batch_size = 8
+test_batch_size = 2
 test_iter = num_test_image / test_batch_size
 
 solver_param = {
@@ -349,12 +337,12 @@ solver_param = {
     'base_lr': base_lr,
     'weight_decay': 0.0005,
     'lr_policy': "step",
-    'stepsize': 5000,
+    'stepsize': args.step_itr,
     'gamma': 0.1,
     'momentum': 0.9,
     'iter_size': iter_size,
-    'max_iter': 15000,
-    'snapshot': 5000,
+    'max_iter': 80000, #args.max_itr,
+    'snapshot': 10000,
     'display': 10,
     'average_loss': 10,
     'type': "SGD",
@@ -364,7 +352,7 @@ solver_param = {
     'snapshot_after_train': True,
     # Test parameters
     'test_iter': [test_iter],
-    'test_interval': 5000,
+    'test_interval': 10000,
     'eval_type': "detection",
     'ap_version': "11point",
     'target_map': 0.72,
