@@ -13,15 +13,19 @@ caffe_root = '/home/karthik/workspace/caffe'
 #model = os.path.join(caffe_root, 'models/VGGNet/VOC0712/SSD_300x300/deploy.prototxt_bkp')
 #caffemodel = os.path.join(caffe_root, 'models/VGGNet/VOC0712/SSD_300x300/VGG_VOC0712_SSD_300x300_iter_60000.caffemodel_bkp')
 #save_model_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Independent_Pruning')
+
 # VOC0712CDP
-#model = os.path.join(caffe_root, 'models/VGGNet/VOC0712CDP/SSD_300x300/deploy.prototxt_bkp')
-#caffemodel = os.path.join(caffe_root, 'models/VGGNet/VOC0712CDP/SSD_300x300/VGG_VOC0712CDP_SSD_300x300_iter_60000.caffemodel_bkp')
-#save_model_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712CDP/Layer_Independent_Pruning')
+model = os.path.join(caffe_root, 'models/VGGNet/VOC0712CDP/SSD_300x300/deploy.prototxt_bkp')
+caffemodel = os.path.join(caffe_root, 'models/VGGNet/VOC0712CDP/SSD_300x300/VGG_VOC0712CDP_SSD_300x300_iter_60000.caffemodel_bkp')
+save_model_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712CDP/Layer_Independent_Pruning')
+exclude_layers = ['conv4_3_norm']
+
 # MS COCO
-model = os.path.join(caffe_root, 'models/VGGNet/coco/SSD_300x300/deploy.prototxt_bkp')
-caffemodel = os.path.join(caffe_root, 'models/VGGNet/coco/SSD_300x300/VGG_coco_SSD_300x300_iter_400000.caffemodel_bkp')
-save_model_path = os.path.join(caffe_root, 'models/VGGNet/coco/Layer_Independent_Pruning')
-exclude_layers = ['conv4_3_norm'] # Skip this layer's parameters
+#model = os.path.join(caffe_root, 'models/VGGNet/coco/SSD_300x300/deploy.prototxt_bkp')
+#caffemodel = os.path.join(caffe_root, 'models/VGGNet/coco/SSD_300x300/VGG_coco_SSD_300x300_iter_400000.caffemodel_bkp')
+#save_model_path = os.path.join(caffe_root, 'models/VGGNet/coco/Layer_Independent_Pruning')
+#exclude_layers = ['conv4_3_norm'] # Skip this layer's parameters
+
 pruning_coeffs = np.arange(0.1, 1.0, 0.1) # Percentage of parameters to be removed 
 
 if os.path.isdir(save_model_path):

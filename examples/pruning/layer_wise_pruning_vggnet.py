@@ -11,9 +11,9 @@ caffe.set_mode_gpu()
 caffe_root = '/home/karthik/workspace/caffe'
 
 # SSD VGGNet VOC0712
-model = os.path.join(caffe_root, 'models/VGGNet/VOC0712/SSD_300x300/deploy.prototxt_bkp')
-caffemodel = os.path.join(caffe_root, 'models/VGGNet/VOC0712/SSD_300x300/VGG_VOC0712_SSD_300x300_iter_60000.caffemodel_bkp')
-save_model_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Wise_Pruning')
+#model = os.path.join(caffe_root, 'models/VGGNet/VOC0712/SSD_300x300/deploy.prototxt_bkp')
+#caffemodel = os.path.join(caffe_root, 'models/VGGNet/VOC0712/SSD_300x300/VGG_VOC0712_SSD_300x300_iter_60000.caffemodel_bkp')
+#save_model_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Wise_Pruning')
 
 # SSD VGGNet MS COCO
 #model = os.path.join(caffe_root, 'models/VGGNet/coco/SSD_300x300/deploy.prototxt_bkp')
@@ -25,8 +25,13 @@ save_model_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Wise_Pru
 #caffemodel = os.path.join(caffe_root, 'models/VGGNet/VOC0712CDP/SSD_300x300/VGG_VOC0712CDP_SSD_300x300_iter_60000.caffemodel_bkp')
 #save_model_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712CDP/Layer_Independent_Pruning')
 
+# SSD - VGG - VOC0712CDP - LAYER WISE PRUNING
+model = os.path.join(caffe_root, 'models/VGGNet/VOC0712CDP/SSD_300x300/deploy.prototxt_bkp')
+caffemodel = os.path.join(caffe_root, 'models/VGGNet/VOC0712CDP/SSD_300x300/VGG_VOC0712CDP_SSD_300x300_iter_60000.caffemodel_bkp')
+save_model_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712CDP/Layer_Wise_Pruning')
+gammas = np.arange(0.2, 2.2, 0.2)
+
 exclude_layers = ['conv4_3_norm'] # Skip this layer's parameters
-gammas = np.arange(0.1, 2.1, 0.1) # Parameters whose value is less than gamma * std_dev in each layer will be pruned
 
 if os.path.isdir(save_model_path):
     shutil.rmtree(save_model_path)
