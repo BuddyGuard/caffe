@@ -16,8 +16,8 @@ caffe_root = '/home/karthik/workspace/caffe'
 
 # SSD ResNet PASCAL - LAYER-WISE PRUNED - RETRAINED 15K - CLUSTERED - COMPRESSED MODELS
 retrained_models_folders = glob.glob('models/ResNet/VOC0712/SSD_300x300_layer_wise_*_pruned')
-compressed_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Compressed_Models')
-decompressed_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Decompressed_Models')
+compressed_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered256_Compressed_Models')
+decompressed_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered256_Decompressed_Models')
 
 codebook_size = 2**8
 ind_bits_size = 2**4

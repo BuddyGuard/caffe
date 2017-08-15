@@ -9,17 +9,23 @@ caffe.set_mode_cpu()
 
 caffe_root = '/home/karthik/workspace/caffe'
 
-# SSD VGGNet PASCAL LAYER INDEPENDENT - PRUNED - RETRAINED 10K - CLUSTERED MODELS
-retrained_iter = '10000'
-retrained_models_folders = glob.glob('models/VGGNet/VOC0712/SSD_300x300_layer_indep_*_pruned')
-clustered_models_path = 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Models'
-compressed_models_path = 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Compressed_Models'
+# SSD VGGNet PASCAL LAYER INDEPENDENT - PRUNED - RETRAINED 15K - CLUSTERED 64 MODELS
+#retrained_iter = '15000'
+#retrained_models_folders = glob.glob('models/VGGNet/VOC0712/SSD_300x300_layer_indep_*_pruned')
+#clustered_models_path = 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered32_Models'
+#compressed_models_path = 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered32_Compressed_Models'
 
 # SSD VGGNet PASCAL LAYER WISE - PRUNED - RETRAINED 15K - CLUSTERED MODELS
 #retrained_iter = '15000'
 #retrained_models_folders = glob.glob('models/VGGNet/VOC0712/SSD_300x300_layer_wise_*_pruned') 
 #clustered_models_path = 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Models'
 #compressed_models_path = 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Compressed_Models'
+
+# SSD VGGNet - VOC0712CDP - LAYER INDEPENDENT - PRUNED - RETRAINED 15K - CLUSTERED 256 MODELS
+retrained_iter = '15000'
+retrained_models_folders = glob.glob('models/VGGNet/VOC0712CDP/SSD_300x300_layer_indep_*_pruned')
+clustered_models_path = 'models/VGGNet/VOC0712CDP/Layer_Independent_Pruned_Retrained_Clustered256_Models'
+compressed_models_path = 'models/VGGNet/VOC0712CDP/Layer_Independent_Pruned_Retrained_Clustered256_Compressed_Models'
 
 codebook_size = 2**8
 ind_bits_size = 2**4

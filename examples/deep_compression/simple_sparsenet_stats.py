@@ -22,4 +22,5 @@ for name, params in net.params.iteritems():
             weights = p.data.flatten()
             nnz = np.count_nonzero(weights)
             zeros = weights.size - nnz
-            print '{} : nonzeros = {}, zeros={}'.format(name, nnz, zeros)
+            unique = np.unique(weights).size
+            print '{} : unique={}, nonzeros = {}, zeros={}'.format(name, unique, nnz, zeros)

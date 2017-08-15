@@ -12,14 +12,14 @@ caffe_root = '/home/karthik/workspace/caffe'
 # SSD ResNet PASCAL LAYER INDEPENDENT - PRUNED - RETRAINED 15K - CLUSTERED MODELS
 #retrained_iter = '15000'
 #retrained_models_folders = glob.glob('models/ResNet/VOC0712/SSD_300x300_layer_indep_*_pruned')
-#clustered_models_path = 'models/ResNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Models'
-#compressed_models_path = 'models/ResNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Compressed_Models'
+#clustered_models_path = 'models/ResNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered128_Models'
+#compressed_models_path = 'models/ResNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered128_Compressed_Models'
 
-# SSD ResNet PASCAL LAYER WISE - PRUNED - RETRAINED 15K - CLUSTERED MODELS
+# SSD ResNet PASCAL LAYER WISE - PRUNED - RETRAINED 15K - CLUSTERED 256 MODELS
 retrained_iter = '15000'
 retrained_models_folders = glob.glob('models/ResNet/VOC0712/SSD_300x300_layer_wise_*_pruned')
-clustered_models_path = 'models/ResNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Models'
-compressed_models_path = 'models/ResNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Compressed_Models'
+clustered_models_path = 'models/ResNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered256_Models'
+compressed_models_path = 'models/ResNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered256_Compressed_Models'
 
 codebook_size = 2**8
 ind_bits_size = 2**4
@@ -129,12 +129,12 @@ for model in clustered_models:
                 spm_stream = np.zeros(len(val_stream), dtype=np.uint8)
                 for pos, val in enumerate(val_stream):
                     spm_stream[pos] = codebook[val]
-                enc_spm_stream = encode_spm_stream(spm_stream, spm_stream.size, ind_bits_size)
+                #enc_spm_stream = encode_spm_stream(spm_stream, spm_stream.size, ind_bits_size)
                 codebook_vals = np.array(codebook.keys(), dtype=np.float32)
                 print 'Compressing {} : codebook={}, spm_stream={}, ind_stream={}'.format(name, codebook_vals.size, spm_stream.size,
-                                                                                          enc_ind_stream.size)
+                                                                                          ind_stream.size)
                 codebook_vals.tofile(fout)
-                enc_spm_stream.tofile(fout)
+                spm_stream.tofile(fout)
                 ind_stream.tofile(fout)
             else:
                 print 'Compressing {} : shape={}'.format(name, p.data.shape)

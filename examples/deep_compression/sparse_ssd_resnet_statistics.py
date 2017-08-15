@@ -7,49 +7,53 @@ from collections import OrderedDict
 
 caffe.set_mode_cpu()
 
-# SSD RESNET VOC0712 LAYER INDEP PRUNED - RETRAINED 15K - CLUSTERED 256
-#model_folders_filter = 'models/ResNet/VOC0712/SSD_300x300_layer_indep_*_pruned'
-#model_filter = 'ResNet_VOC0712_SSD_300x300_layer_wise_*_pruned_iter_15000.caffemodel'
-#model_folders = glob.glob(model_folders_filter)
-#clustered_models_path = 'models/ResNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Models'
-#clustered = True
-
-# SSD RESNET VOC0712 - LAYER WISE PRUNED
-model_folders_filter = 'models/ResNet/VOC0712/Layer_Wise_Pruning'
-model_filter = 'ResNet_VOC0712_SSD_300x300_layer_wise_*_pruned_iter_15000.caffemodel'
-pruned_models_path = 'models/ResNet/VOC0712/Layer_Wise_Pruning'
-pruned = True
-clustered = False
-
-
-# SSD RESNET VOC0712 - LAYER WISE PRUNED - RETRAINED 15K - CLUSTERED 256
+# SSD - RESNET - VOC0712 - LAYER INDEP PRUNED - RETRAINED 15K
 #model_folders_filter = 'models/ResNet/VOC0712/SSD_300x300_layer_wise_*_pruned'
 #model_filter = 'ResNet_VOC0712_SSD_300x300_layer_wise_*_pruned_iter_15000.caffemodel'
 #model_folders = glob.glob(model_folders_filter)
-#clustered_models_path = 'models/ResNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Models'
+
+# SSD - RESNET - VOC0712 - LAYER INDEP PRUNED - RETRAINED 15K - CLUSTERED 256
+model_folders_root = 'models/ResNet/VOC0712'
+clustered_models_path = 'models/ResNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Models'
+model_filter = 'ResNet_VOC0712_SSD_300x300_layer_indep_*_pruned_iter_15000_clustered.caffemodel'
+enc_ind_bit_size = 2**4
+clustered = True
+will_compress = True
+
+# SSD - RESNET - VOC0712 - LAYER WISE PRUNED - RETRAINED 15K - CLUSTERED 256
+#model_folders_root = 'models/ResNet/VOC0712'
+#clustered_models_path = 'models/ResNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered256_Models'
+#model_filter = 'ResNet_VOC0712_SSD_300x300_layer_wise_*_pruned_iter_15000_clustered.caffemodel'
+#enc_ind_bit_size = 2**4
 #clustered = True
+#will_compress = True
 
+def get_sparse_layer_elements_sizes(weights, bits):
+    nnz = 0
+    zcount = 0
+    for wt in weights:
+        if wt:
+            zcount = 0
+            nnz += 1
+        else:
+            zcount += 1
+            if zcount % bits == 0:          
+                zcount = 0
+                nnz +=1
+  
+    enc_ind_len = (nnz-1)/2 + 1
+    # Bytes of each data type
+    per_float_bytes = np.arange(1).astype(np.float32).nbytes 
+    per_uint_bytes = np.arange(1).astype(np.uint8).nbytes
+    
+    # Size of elements of sparse layer
+    weights_size = (per_float_bytes * np.unique(weights).size)/float(1024**2)
+    enc_indices_size = (per_uint_bytes * enc_ind_len)/float(1024**2)
+    spm_code_size = (per_uint_bytes * nnz)/float(1024**2)
+    
+    return weights_size, enc_indices_size, spm_code_size
 
-exclude_layers = ['conv4_3_norm'] # Skip this layer's parameters
-
-if clustered:
-    clustered_models = os.listdir(clustered_models_path)
-    clustered_models.sort()
-
-model_folders = glob.glob(model_folders_filter)
-model_folders.sort()
-
-stats = OrderedDict()
-
-for model_folder in model_folders:
-    if clustered:
-        for clustered_model in clustered_models:
-            extract_folder = clustered_model[clustered_model.find('SSD'):clustered_model.find('_iter')]
-            if os.path.basename(model_folder) == extract_folder:
-                model = os.path.join(clustered_models_path, clustered_model)
-    else: 
-        model = glob.glob(os.path.join(model_folder, model_filter))[0]
-    proto = os.path.join(model_folder, 'deploy.prototxt')
+def get_stats(model, proto):
     print '\nModel : {}'.format(model)
     net = caffe.Net(proto, model, caffe.TEST)
     total = OrderedDict()
@@ -57,24 +61,57 @@ for model_folder in model_folders:
     zeros_count = OrderedDict()
     zeros_percentage = OrderedDict()
     unique = OrderedDict()
+    all_wts_size = 0
+    all_bias_size = 0
+    all_enc_ind_size = 0
+    all_spm_code_size = 0
     for name, param in net.params.iteritems():
-        if name in exclude_layers:
-            continue
         for p in param:
             if len(p.data.shape) == 4:
                 weights = p.data
-                if len(weights.shape) == 4:
-                    num_of_params = weights.size
-                    non_zero_params = np.count_nonzero(weights.flatten())
-                    zeros = num_of_params - non_zero_params
-                    total[name] = num_of_params
-                    nonzeros[name] = non_zero_params
-                    zeros_count[name] = zeros
-                    zeros_percentage[name] = float(zeros)/num_of_params*100
-                    unique[name] = np.unique(weights.flatten()).size
-    stats[model] = {'layers':total.keys(), 'total':total.values(), 'zeros':zeros_count.values(),
-                    'nonzeros':nonzeros.values(), 'unique':unique.values()}
-    
+                num_of_params = weights.size
+                non_zero_params = np.count_nonzero(weights.flatten())
+                zeros = num_of_params - non_zero_params
+                total[name] = num_of_params
+                nonzeros[name] = non_zero_params
+                zeros_count[name] = zeros
+                zeros_percentage[name] = float(zeros)/num_of_params*100
+                unique[name] = np.unique(weights.flatten()).size
+                if will_compress:
+                    wts_size, enc_ind_size, spm_code_size = get_sparse_layer_elements_sizes(weights.flatten(), enc_ind_bit_size)
+                    all_wts_size += wts_size
+                    all_enc_ind_size += enc_ind_size
+                    all_spm_code_size += spm_code_size
+            else:
+                bias = p.data
+                if will_compress:
+                    per_float_bytes = np.arange(1).astype(np.float32).nbytes
+                    all_bias_size += (per_float_bytes * bias.flatten().size)/float(1024**2)
+    return {'layers':total.keys(), 'total':total.values(), 'zeros':zeros_count.values(),
+            'nonzeros':nonzeros.values(), 'unique':unique.values(),
+            'weights_size':all_wts_size, 'bias_size':all_bias_size,
+            'enc_ind_size':all_enc_ind_size, 'spm_code_size':all_spm_code_size}
+
+# Dict for storing stats of each model
+stats = OrderedDict()
+
+if clustered:
+    models = glob.glob(os.path.join(clustered_models_path, model_filter))
+    models.sort()
+    for model in models:
+        model_folder = model[model.find('SSD'):model.find('_iter')]
+        proto = os.path.join(model_folders_root, model_folder, 'deploy.prototxt')
+        stats[model] = get_stats(model, proto)
+else:
+    model_folders = glob.glob(model_folders_filter)
+    model_folders.sort()
+    for model_folder in model_folders:
+        if not glob.glob(os.path.join(model_folder, model_filter)):
+            continue
+        proto = os.path.join(model_folder, 'deploy.prototxt')
+        model = glob.glob(os.path.join(model_folder, model_filter))[0]
+        stats[model] = get_stats(model, proto)
+
 for key in stats.keys():
     print "\ndata['model'] = '{}'".format(os.path.basename(key))
     print "data['layers'] = {}".format(stats[key]['layers'])
@@ -82,3 +119,8 @@ for key in stats.keys():
     print "data['zeros'] = {}".format(stats[key]['zeros'])
     print "data['nonzeros'] = {}".format(stats[key]['nonzeros'])
     print "data['unique'] = {}".format(stats[key]['unique'])
+    if will_compress:
+        print "data['weigths_size'] = {}".format(stats[key]['weights_size'])
+        print "data['bias_size'] = {}".format(stats[key]['bias_size'])
+        print "data['enc_ind_size'] = {}".format(stats[key]['enc_ind_size'])
+        print "data['spm_code_size'] = {}".format(stats[key]['spm_code_size'])
