@@ -13,14 +13,21 @@ caffe.set_mode_gpu()
 caffe_root = '/home/karthik/workspace/caffe'
 
 # SSD VGGNet PASCAL LAYER INDEPENDENT - PRUNED - RETRAINED MODELS
-model_folders_filter = 'models/VGGNet/VOC0712/SSD_300x300_layer_indep_*_pruned'
-model_filter = 'VGG_VOC0712_SSD_300x300_layer_indep_*_pruned_iter_15000.caffemodel'
-clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Models')
+#model_folders_filter = 'models/VGGNet/VOC0712/SSD_300x300_layer_indep_*_pruned'
+#model_filter = 'VGG_VOC0712_SSD_300x300_layer_indep_*_pruned_iter_15000.caffemodel'
+#clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered16_Models')
 
 # SSD VGGNet PASCAL LAYER WISE - PRUNED - RETRAINED MODELS 
 #model_folders_filter = 'models/VGGNet/VOC0712/SSD_300x300_layer_wise_*_pruned'
 #model_filter = 'VGG_VOC0712_SSD_300x300_layer_wise_*_pruned_iter_15000.caffemodel'
-#clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Models')
+#clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered16_Models')
+#num_centroids = 2**4 - 1
+
+# SSD VGGNet - VOC0712CDP - LAYER INDEPENDENT - PRUNED - RETRAINED MODELS
+model_folders_filter = 'models/VGGNet/VOC0712CDP/SSD_300x300_layer_indep_*_pruned'
+model_filter = 'VGG_VOC0712CDP_SSD_300x300_layer_indep_*_pruned_iter_15000.caffemodel'
+clustered_models_path = os.path.join(caffe_root, 'models/VGGNet/VOC0712CDP/Layer_Independent_Pruned_Retrained_Clustered16_Models')
+num_centroids = 2**4 - 1
 
 exclude_layers = ['conv4_3_norm'] # Skip this layer's parameters
 
@@ -60,9 +67,6 @@ for model_folder in pruned_models_folder:
             min_val = weights.flatten().min()
             max_val = weights.flatten().max()
             # Initialize centroids
-            centroids = np.linspace(min_val, max_val, num=256)
-            # Initialize centroids
-            num_centroids = 2**8 - 1
             centroids = np.linspace(min_val, max_val, num=num_centroids).reshape(-1, 1)
             # Training data
             nnz = len(weights_dict)

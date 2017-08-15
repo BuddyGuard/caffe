@@ -12,15 +12,52 @@ caffe.set_mode_gpu()
 
 caffe_root = '/home/karthik/workspace/caffe'
 
-# SSD ResNet PASCAL LAYER INDEPENDENT - PRUNED - RETRAINED MODELS
+# SSD ResNet - PASCAL - LAYER INDEPENDENT PRUNED - RETRAINED 15K - CLUSTERED 64
 #model_folders_filter = 'models/ResNet/VOC0712/SSD_300x300_layer_indep_*_pruned'
 #model_filter = 'ResNet_VOC0712_SSD_300x300_layer_indep_*_pruned_iter_15000.caffemodel'
-#clustered_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered_Models')
+#clustered_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered64_Models')
 
-# SSD ResNet PASCAL LAYER INDEPENDENT - PRUNED - RETRAINED MODELS
+# SSD ResNet - PASCAL - LAYER INDEPENDENT PRUNED - RETRAINED 15K - CLUSTERED 32
+#model_folders_filter = 'models/ResNet/VOC0712/SSD_300x300_layer_indep_*_pruned'
+#model_filter = 'ResNet_VOC0712_SSD_300x300_layer_indep_*_pruned_iter_15000.caffemodel'
+#clustered_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered32_Models')
+#num_centroids = 2**5 - 1
+
+# SSD ResNet - PASCAL - LAYER INDEPENDENT PRUNED - RETRAINED 15K - CLUSTERED 32
+#model_folders_filter = 'models/ResNet/VOC0712/SSD_300x300_layer_indep_*_pruned'
+#model_filter = 'ResNet_VOC0712_SSD_300x300_layer_indep_*_pruned_iter_15000.caffemodel'
+#clustered_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Independent_Pruned_Retrained_Clustered16_Models')
+#num_centroids = 2**4 - 1
+
+# SSD ResNet - PASCAL - LAYER WISE PRUNED - RETRAINED 15K - CLUSTER 256
 model_folders_filter = 'models/ResNet/VOC0712/SSD_300x300_layer_wise_*_pruned'
 model_filter = 'ResNet_VOC0712_SSD_300x300_layer_wise_*_pruned_iter_15000.caffemodel'
-clustered_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered_Models')
+clustered_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered256_Models')
+num_centroids = 2**8 - 1
+
+# SSD ResNet - PASCAL - LAYER WISE PRUNED - RETRAINED 15K - CLUSTER 128
+#model_folders_filter = 'models/ResNet/VOC0712/SSD_300x300_layer_wise_*_pruned'
+#model_filter = 'ResNet_VOC0712_SSD_300x300_layer_wise_*_pruned_iter_15000.caffemodel'
+#clustered_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered128_Models')
+#num_centroids = 2**7 - 1
+
+# SSD ResNet - PASCAL - LAYER WISE PRUNED - RETRAINED 15K - CLUSTER 64
+#model_folders_filter = 'models/ResNet/VOC0712/SSD_300x300_layer_wise_*_pruned'
+#model_filter = 'ResNet_VOC0712_SSD_300x300_layer_wise_*_pruned_iter_15000.caffemodel'
+#clustered_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered64_Models')
+#num_centroids = 2**6 - 1
+
+# SSD ResNet - PASCAL - LAYER WISE PRUNED - RETRAINED 15K - CLUSTER 32
+#model_folders_filter = 'models/ResNet/VOC0712/SSD_300x300_layer_wise_*_pruned'
+#model_filter = 'ResNet_VOC0712_SSD_300x300_layer_wise_*_pruned_iter_15000.caffemodel'
+#clustered_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered32_Models')
+#num_centroids = 2**5 - 1
+
+# SSD ResNet - PASCAL - LAYER WISE PRUNED - RETRAINED 15K - CLUSTER 16
+#model_folders_filter = 'models/ResNet/VOC0712/SSD_300x300_layer_wise_*_pruned'
+#model_filter = 'ResNet_VOC0712_SSD_300x300_layer_wise_*_pruned_iter_15000.caffemodel'
+#clustered_models_path = os.path.join(caffe_root, 'models/ResNet/VOC0712/Layer_Wise_Pruned_Retrained_Clustered16_Models')
+#num_centroids = 2**4 - 1
 
 # Check Clustered Models path
 if not os.path.isdir(clustered_models_path):
@@ -63,9 +100,6 @@ for model_folder in pruned_models_folder:
                 min_val = weights.flatten().min()
                 max_val = weights.flatten().max()
                 # Initialize centroids
-                centroids = np.linspace(min_val, max_val, num=256)
-                # Initialize centroids
-                num_centroids = 2**8 - 1
                 centroids = np.linspace(min_val, max_val, num=num_centroids).reshape(-1, 1)
                 # Training data
                 nnz = len(weights_dict)
