@@ -11,8 +11,8 @@ from google.protobuf import text_format
 caffe_root = os.getcwd()
 
 # Paths to lmdb files
-train_data = 'data/2016-02-10_cnnG_four-corpora-887/pretrain.train_lmdb'
-test_data = 'data/2016-02-10_cnnG_four-corpora-887/pretrain.val_lmdb'
+train_data = 'data/bgfr_four_corpora/2016-02-10_cnnG_four-corpora-887/pretrain.train_lmdb'
+test_data = 'data/bgfr_four_corpora/2016-02-10_cnnG_four-corpora-887/pretrain.val_lmdb'
 
 # Organize current experiment
 job_name = '2016-02-10_cnnG_four-corpora-887'
@@ -76,16 +76,17 @@ solver_param = {
 # Check if given data file exist
 assert os.path.exists(train_data)
 assert os.path.exists(test_data)
-make_if_not(save_dir)
-make_if_not(job_dir)
-make_if_not(snapshot_dir)
+make_if_not_exist(save_dir)
+make_if_not_exist(job_dir)
+make_if_not_exist(snapshot_dir)
 
 # Create train net
 net = caffe.NetSpec()
-net.data, net.label  = BGFRNetInput(data_file=training_data, 
+net.data, net.label  = BGFRNetInput(data_file=train_data, 
                                     batch_size=train_batch_size, 
                                     scale=input_transform_scale,
                                     train=True,
                                     output_label=True)
+BGFRNetBody(net, from_layer='data', train=True)
 
 print net.to_proto()

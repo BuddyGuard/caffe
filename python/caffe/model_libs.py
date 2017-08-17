@@ -59,8 +59,11 @@ def BGFRNetBody(net, from_layer, train=True):
     net.relu4 = L.ReLU(net.fc1, in_place=True)
 
     from_layer = 'relu4'
-    if 'train':
+    if train:
         net.drop1 = L.Dropout(net.relu4, dropout_ratio=0.5, in_place=True)
         from_layer = 'drop1'
 
     net.out = L.InnerProduct(net[from_layer], num_output=64, axis=-1, **kwargs)
+
+    if train:
+        net.loss = L.SoftmaxWithLoss(net.out, net.label)
