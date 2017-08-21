@@ -57,8 +57,15 @@ Dtype SGDSolver<Dtype>::GetLearningRate() {
         (Dtype(1.) + exp(-this->param_.gamma() * (Dtype(this->iter_) -
           Dtype(this->param_.stepsize())))));
   } else if (lr_policy == "bgfr") {
-	rate = this->param_.lr_high() - (this->param_.lr_high() - this->param_.lr_low()) * 
-		   (this->iter_ - 1) / (this->param_.max_epochs()-1);
+    int iter_per_epoch = this->param_.max_iter() / this->param_.max_epochs();
+    int current_epoch = this->iter_ / iter_per_epoch;
+    if (this->iter_ != 0 && (iter_per_epoch % this->iter_) == 0){
+        LOG(INFO) << "Iterations per epoch : " << iter_per_epoch;
+        LOG(INFO) << "Current epoch : "<< current_epoch;
+    }
+    rate = this->param_.lr_high() - (this->param_.lr_high() - this->param_.lr_low()) *
+           (current_epoch - 1) / (this->param_.max_epochs()-1);
+
   } else {
     LOG(FATAL) << "Unknown learning rate policy: " << lr_policy;
   }
